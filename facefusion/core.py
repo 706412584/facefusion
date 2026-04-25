@@ -27,6 +27,11 @@ def cli() -> None:
 
 		if validate_args(program):
 			args = vars(program.parse_args())
+			
+			# Set language before applying other args
+			if 'language' in args and args['language']:
+				translator.set_language(args['language'])
+			
 			apply_args(args, state_manager.init_item)
 
 			if state_manager.get_item('command'):

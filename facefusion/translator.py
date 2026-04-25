@@ -1,10 +1,11 @@
 import importlib
+import os
 from typing import Optional
 
 from facefusion.types import Language, LocalePoolSet, Locales
 
 LOCALE_POOL_SET : LocalePoolSet = {}
-CURRENT_LANGUAGE : Language = 'en'
+CURRENT_LANGUAGE : Language = os.environ.get('FACEFUSION_LANGUAGE', 'en')
 
 
 def __autoload__(module_name : str) -> None:
@@ -33,3 +34,12 @@ def get(notation : str, module_name : str = 'facefusion') -> Optional[str]:
 				return current
 
 	return None
+
+
+def set_language(language : Language) -> None:
+	global CURRENT_LANGUAGE
+	CURRENT_LANGUAGE = language
+
+
+def get_language() -> Language:
+	return CURRENT_LANGUAGE
