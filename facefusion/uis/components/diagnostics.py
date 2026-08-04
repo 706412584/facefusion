@@ -141,7 +141,7 @@ def update_diagnostics(is_enabled : bool, frame_number : int = 0) -> Tuple[gradi
 	# 诊断使用与实际处理一致的检测参数，但单独清缓存重算，确保反映当前参数
 	clear_faces()
 	target_faces = get_many_faces([ vision_frame ])
-	target_faces = sort_and_filter_faces(target_faces)
+	target_faces = sort_and_filter_faces([], target_faces)
 	matched_faces = _resolve_matched_faces(vision_frame, target_faces, frame_number)
 	report = _build_report(target_faces, matched_faces)
 	debug_vision_frame = _draw_overlay(vision_frame, target_faces)
@@ -192,7 +192,7 @@ def _resolve_matched_faces(vision_frame : VisionFrame, target_faces : List[Face]
 	else:
 		return []
 
-	reference_faces = sort_and_filter_faces(get_many_faces([ reference_vision_frame ]))
+	reference_faces = sort_and_filter_faces([], get_many_faces([ reference_vision_frame ]))
 	reference_face = get_one_face(reference_faces, state_manager.get_item('reference_face_position'))
 	if reference_face:
 		return find_match_faces([ reference_face ], target_faces, state_manager.get_item('reference_face_distance'))
