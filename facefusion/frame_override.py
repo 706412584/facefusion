@@ -372,6 +372,16 @@ def apply_context(frame_number : int) -> Generator[ResolvedSettings, None, None]
 		_CONTEXT.reset(token)
 
 
+@contextmanager
+def suppress_override() -> Generator[None, None, None]:
+	"""临时关闭帧覆盖（source/reference 身份解析、baseline 缓存写入）。"""
+	token = _CONTEXT.set(None)
+	try:
+		yield
+	finally:
+		_CONTEXT.reset(token)
+
+
 def build_preset_params(preset_name : str, current_mask_types : Optional[List[str]] = None) -> Dict[str, Any]:
 	raw = deepcopy(PRESET_PARAMS.get(preset_name, {})) #type:ignore[arg-type]
 	add_mask = raw.pop('face_mask_types_add', None)

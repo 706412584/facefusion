@@ -132,7 +132,17 @@ def deduplicate_faces(faces : List[Face]) -> List[Face]:
 	return kept_faces
 
 
-def get_static_faces(vision_frames : List[VisionFrame]) -> List[Face]:
+def get_static_faces(vision_frames : List[VisionFrame], use_baseline : bool = False) -> List[Face]:
+	# source/reference 身份脸必须用全局 base 参数，避免帧补丁污染缓存与匹配
+	if use_baseline:
+		from facefusion.frame_override import suppress_override
+
+		with suppress_override():
+			return _get_static_faces(vision_frames)
+	return _get_static_faces(vision_frames)
+
+
+def _get_static_faces(vision_frames : List[VisionFrame]) -> List[Face]:
 	many_faces : List[Face] = []
 
 	for vision_frame in vision_frames:

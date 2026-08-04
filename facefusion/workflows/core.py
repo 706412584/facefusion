@@ -74,12 +74,26 @@ def conditional_get_target_vision_frames(frame_number : int) -> List[VisionFrame
 def preheat_static_faces() -> None:
 	"""出片前单线程、零 override 预热 source/reference 人脸缓存，避免线程池首检被补丁参数污染。"""
 	clear_faces()
+	try:
+		from facefusion.processors.modules.face_swapper.core import resolve_average_source_face
+
+		resolve_average_source_face.cache_clear()
+	except Exception:
+		pass
 	source_vision_frames = read_static_images(state_manager.get_item('source_paths'))
 	if source_vision_frames:
-		get_static_faces(source_vision_frames)
+		get_static_faces(source_vision_frames, use_baseline = True)
 	reference_vision_frame = conditional_get_reference_vision_frame()
 	if is_vision_frame(reference_vision_frame):
-		get_static_faces([ reference_vision_frame ])
+		get_static_faces([ reference_vision_frame ], use_baseline = True)
+	source_paths = state_manager.get_item('source_paths')
+	if source_paths:
+		try:
+			from facefusion.processors.modules.face_swapper.core import resolve_average_source_face
+
+			resolve_average_source_face(tuple(source_paths))
+		except Exception:
+			pass
 
 
 def process_temp_frame(target_vision_frames : List[VisionFrame], temp_vision_frame : VisionFrame, frame_number : int) -> VisionFrame:

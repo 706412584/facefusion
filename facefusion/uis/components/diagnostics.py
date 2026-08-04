@@ -4,8 +4,8 @@ import cv2
 import gradio
 import numpy
 
-from facefusion import state_manager
-from facefusion.face_creator import get_many_faces, get_one_face
+from facefusion import frame_override, state_manager
+from facefusion.face_creator import get_many_faces, get_one_face, get_static_faces
 from facefusion.face_selector import find_match_faces, sort_and_filter_faces
 from facefusion.face_store import clear_faces
 from facefusion.filesystem import is_image, is_video
@@ -104,8 +104,8 @@ def listen() -> None:
 		if rules_markdown and effective_source_markdown:
 			meta_outputs = [ rules_markdown, effective_source_markdown ]
 
-		for button, preset_name in
-		[
+		for button, preset_name in [
+		
 			(DIAGNOSTICS_FIX_NO_SWAP_BUTTON, 'no_swap'),
 			(DIAGNOSTICS_FIX_DOUBLE_BUTTON, 'double'),
 			(DIAGNOSTICS_FIX_DISTORTION_BUTTON, 'distortion')
@@ -158,15 +158,16 @@ def update_diagnostics(is_enabled : bool, frame_number : int = 0) -> Tuple[gradi
 	if vision_frame is None:
 		return gradio.Image(value = None, visible = True), gradio.Textbox(value = '请先选择目标图像或视频。', visible = True), gradio.Button(visible = False), gradio.Button(visible = False), gradio.Button(visible = False)
 
-	# 诊断使用与实际处理一致的检测参数，但单独清缓存重算，确保反映当前参数
-	clear_faces()
-	target_faces = get_many_faces([ vision_frame ])
-	target_faces = sort_and_filter_faces([], target_faces)
-	matched_faces = _resolve_matched_faces(vision_frame, target_faces, frame_number)
-	report = _build_report(target_faces, matched_faces)
-	debug_vision_frame = _draw_overlay(vision_frame, target_faces)
-	debug_vision_frame = cv2.cvtColor(debug_vision_frame, cv2.COLOR_BGR2RGB)
-	clear_faces()
+	# 诊断按当前帧 effective 参数检测；reference 身份用 baseline
+	with frame_override.apply_context(int(frame_number or 0)):
+		clear_faces()
+		target_faces = get_many_faces([ vision_frame ])
+		target_faces = sort_and_filter_faces([], target_faces)
+		matched_faces = _resolve_matched_faces(vision_frame, target_faces, frame_number)
+		report = frame_override.format_effective_source(int(frame_number or 0)) + chr(10) + _build_report(target_faces, matched_faces)
+		debug_vision_frame = _draw_overlay(vision_frame, target_faces)
+		debug_vision_frame = cv2.cvtColor(debug_vision_frame, cv2.COLOR_BGR2RGB)
+		clear_faces()
 
 	# 根据检测到的问题，决定显示哪些就地修复按钮
 	face_total = len(target_faces)
@@ -212,7 +213,7 @@ def _resolve_matched_faces(vision_frame : VisionFrame, target_faces : List[Face]
 	else:
 		return []
 
-	reference_faces = sort_and_filter_faces([], get_many_faces([ reference_vision_frame ]))
+	reference_faces = sort_and_filter_faces([], get_static_faces([ reference_vision_frame ], use_baseline = True))
 	reference_face = get_one_face(reference_faces, state_manager.get_item('reference_face_position'))
 	if reference_face:
 		return find_match_faces([ reference_face ], target_faces, state_manager.get_item('reference_face_distance'))
