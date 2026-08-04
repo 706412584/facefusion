@@ -14,7 +14,7 @@ from facefusion.temp_helper import move_temp_file, resolve_temp_frame_set
 from facefusion.time_helper import calculate_end_time
 from facefusion.types import ErrorCode, Resolution, VisionFrame
 from facefusion.vision import detect_video_resolution, pack_resolution, read_static_image, read_static_video_frame, restrict_trim_frame, restrict_video_fps, restrict_video_resolution, scale_resolution, select_video_frames, write_image
-from facefusion.workflows.core import conditional_get_target_vision_frames, is_process_stopping, process_temp_frame
+from facefusion.workflows.core import conditional_get_target_vision_frames, is_process_stopping, preheat_static_faces, process_temp_frame
 
 
 def analyse_video() -> ErrorCode:
@@ -57,6 +57,7 @@ def process_disk_frames() -> ErrorCode:
 			progress.set_postfix(execution_providers = state_manager.get_item('execution_providers'))
 
 			read_static_video_frame(state_manager.get_item('target_path'), state_manager.get_item('reference_frame_number'))
+			preheat_static_faces()
 
 			with ThreadPoolExecutor(max_workers = state_manager.get_item('execution_thread_count')) as executor:
 				futures : Deque[Future[bool]] = deque()
@@ -123,6 +124,7 @@ def process_memory_frames() -> ErrorCode:
 			progress.set_postfix(execution_providers = state_manager.get_item('execution_providers'))
 
 			read_static_video_frame(state_manager.get_item('target_path'), state_manager.get_item('reference_frame_number'))
+			preheat_static_faces()
 
 			with ThreadPoolExecutor(max_workers = state_manager.get_item('execution_thread_count')) as executor:
 				futures : Deque[Future[VisionFrame]] = deque()

@@ -2,14 +2,16 @@ from typing import List
 
 import numpy
 
-from facefusion import logger, process_manager, state_manager, translator
+from facefusion import frame_override, logger, process_manager, state_manager, translator
 from facefusion.audio import create_empty_audio_frame, get_audio_frame, get_voice_frame
 from facefusion.common_helper import get_first
+from facefusion.face_creator import get_static_faces
+from facefusion.face_store import clear_faces
 from facefusion.filesystem import filter_audio_paths
 from facefusion.processors.core import get_processors_modules
 from facefusion.temp_helper import clear_temp_directory, create_temp_directory
 from facefusion.types import AudioFrame, ErrorCode, VisionFrame
-from facefusion.vision import conditional_merge_vision_mask, extract_vision_mask, read_static_image, read_static_images, read_static_video_frame, restrict_trim_frame, restrict_video_fps, select_video_frames
+from facefusion.vision import conditional_merge_vision_mask, extract_vision_mask, is_vision_frame, read_static_image, read_static_images, read_static_video_frame, restrict_trim_frame, restrict_video_fps, select_video_frames
 
 
 def is_process_stopping() -> bool:
@@ -69,23 +71,38 @@ def conditional_get_target_vision_frames(frame_number : int) -> List[VisionFrame
 	return [ read_static_image(state_manager.get_item('target_path')) ]
 
 
-def process_temp_frame(target_vision_frames : List[VisionFrame], temp_vision_frame : VisionFrame, frame_number : int) -> VisionFrame:
-	reference_vision_frame = conditional_get_reference_vision_frame()
+def preheat_static_faces() -> None:
+	"""出片前单线程、零 override 预热 source/reference 人脸缓存，避免线程池首检被补丁参数污染。"""
+	clear_faces()
 	source_vision_frames = read_static_images(state_manager.get_item('source_paths'))
-	source_audio_frame = conditional_get_source_audio_frame(frame_number)
-	source_voice_frame = conditional_get_source_voice_frame(frame_number)
-	temp_vision_mask = extract_vision_mask(temp_vision_frame)
+	if source_vision_frames:
+		get_static_faces(source_vision_frames)
+	reference_vision_frame = conditional_get_reference_vision_frame()
+	if is_vision_frame(reference_vision_frame):
+		get_static_faces([ reference_vision_frame ])
 
-	for processor_module in get_processors_modules(state_manager.get_item('processors')):
-		temp_vision_frame, temp_vision_mask = processor_module.process_frame(
-		{
-			'reference_vision_frame': reference_vision_frame,
-			'source_vision_frames': source_vision_frames,
-			'source_audio_frame': source_audio_frame,
-			'source_voice_frame': source_voice_frame,
-			'target_vision_frames': target_vision_frames,
-			'temp_vision_frame': temp_vision_frame[:, :, :3],
-			'temp_vision_mask': temp_vision_mask
-		})
 
-	return conditional_merge_vision_mask(temp_vision_frame, temp_vision_mask)
+def process_temp_frame(target_vision_frames : List[VisionFrame], temp_vision_frame : VisionFrame, frame_number : int) -> VisionFrame:
+	with frame_override.apply_context(frame_number):
+		temp_vision_mask = extract_vision_mask(temp_vision_frame)
+		if frame_override.get_context_action() == 'skip_process':
+			return conditional_merge_vision_mask(temp_vision_frame, temp_vision_mask)
+
+		reference_vision_frame = conditional_get_reference_vision_frame()
+		source_vision_frames = read_static_images(state_manager.get_item('source_paths'))
+		source_audio_frame = conditional_get_source_audio_frame(frame_number)
+		source_voice_frame = conditional_get_source_voice_frame(frame_number)
+
+		for processor_module in get_processors_modules(state_manager.get_item('processors')):
+			temp_vision_frame, temp_vision_mask = processor_module.process_frame(
+			{
+				'reference_vision_frame': reference_vision_frame,
+				'source_vision_frames': source_vision_frames,
+				'source_audio_frame': source_audio_frame,
+				'source_voice_frame': source_voice_frame,
+				'target_vision_frames': target_vision_frames,
+				'temp_vision_frame': temp_vision_frame[:, :, :3],
+				'temp_vision_mask': temp_vision_mask
+			})
+
+		return conditional_merge_vision_mask(temp_vision_frame, temp_vision_mask)
