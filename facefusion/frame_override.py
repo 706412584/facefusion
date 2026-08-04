@@ -1,7 +1,8 @@
-"""按帧 / 时段参数覆盖（预览与播放优先；进程内会话）。
+"""按帧 / 时段参数覆盖（预览 / 播放 / 出片）。
 
 优先级：单帧例外 > 时段覆盖（后写优先）> 全局 state_manager。
 通过 contextvars 注入，禁止在多线程里 per-frame set_item。
+可序列化进 job step.args['frame_override'] 以便复现出片。
 """
 
 from __future__ import annotations
@@ -119,6 +120,85 @@ def get_context_action() -> ActionName:
 def clear_all() -> None:
 	_FRAME_RULES.clear()
 	_RANGE_RULES.clear()
+
+
+def export_payload() -> Optional[Dict[str, Any]]:
+	if not _FRAME_RULES and not _RANGE_RULES:
+		return None
+	return\
+	{
+		'version': 1,
+		'frame_rules':
+		{
+			str(frame_number): deepcopy(rule) for frame_number, rule in _FRAME_RULES.items()
+		},
+		'range_rules': deepcopy(_RANGE_RULES)
+	}
+
+
+def import_payload(payload : Optional[Dict[str, Any]]) -> None:
+	clear_all()
+	if not payload or not isinstance(payload, dict):
+		return
+
+	frame_rules = payload.get('frame_rules') or {}
+	if isinstance(frame_rules, dict):
+		for key, rule in frame_rules.items():
+			if not isinstance(rule, dict):
+				continue
+			try:
+				frame_number = int(rule.get('frame', key))
+			except (TypeError, ValueError):
+				continue
+			action = rule.get('action') or 'normal'
+			if action not in { 'normal', 'skip_swap', 'skip_process' }:
+				action = 'normal'
+			_FRAME_RULES[frame_number] =\
+			{
+				'id': str(rule.get('id') or uuid4().hex[:8]),
+				'frame': frame_number,
+				'action': action, #type:ignore[typeddict-item]
+				'preset': rule.get('preset'),
+				'params': _sanitize_params(rule.get('params') or {}),
+				'label': str(rule.get('label') or ''),
+				'enabled': bool(rule.get('enabled', True))
+			}
+
+	range_rules = payload.get('range_rules') or []
+	if isinstance(range_rules, list):
+		for rule in range_rules:
+			if not isinstance(rule, dict):
+				continue
+			try:
+				start_frame = int(rule.get('start_frame', 0))
+				end_frame = int(rule.get('end_frame', 0))
+			except (TypeError, ValueError):
+				continue
+			if end_frame < start_frame:
+				start_frame, end_frame = end_frame, start_frame
+			action = rule.get('action') or 'normal'
+			if action not in { 'normal', 'skip_swap', 'skip_process' }:
+				action = 'normal'
+			_RANGE_RULES.append(
+			{
+				'id': str(rule.get('id') or uuid4().hex[:8]),
+				'start_frame': start_frame,
+				'end_frame': end_frame,
+				'action': action, #type:ignore[typeddict-item]
+				'preset': rule.get('preset'),
+				'params': _sanitize_params(rule.get('params') or {}),
+				'label': str(rule.get('label') or ''),
+				'enabled': bool(rule.get('enabled', True))
+			})
+
+
+def attach_to_step_args(step_args : Dict[str, Any]) -> Dict[str, Any]:
+	payload = export_payload()
+	if payload:
+		step_args['frame_override'] = payload
+	else:
+		step_args.pop('frame_override', None)
+	return step_args
 
 
 def list_rules() -> List[Dict[str, Any]]:

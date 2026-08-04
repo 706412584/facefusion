@@ -49,7 +49,7 @@ def render() -> None:
 	gradio.Markdown(
 		'### 疑难帧修复\n'
 		'**全局**改默认参数（控件会回写，出片也用这套默认）；'
-		'**当前帧 / 区间**写入补丁（仅本会话；预览、播放与出片按帧生效）。'
+		'**当前帧 / 区间**写入补丁（预览、播放与出片按帧生效；创建/运行 job 时写入 step JSON）。'
 		'优先级：单帧 > 时段 > 全局。左侧滑条始终显示全局 base。'
 	)
 	REPAIR_SCOPE_RADIO = gradio.Radio(
@@ -89,6 +89,10 @@ def render() -> None:
 	RULES_MARKDOWN = gradio.Markdown(value = frame_override.format_rules_markdown())
 
 	register_ui_component('repair_scope_radio', REPAIR_SCOPE_RADIO)
+	register_ui_component('repair_range_start_number', RANGE_START_NUMBER)
+	register_ui_component('repair_range_end_number', RANGE_END_NUMBER)
+	register_ui_component('repair_rules_markdown', RULES_MARKDOWN)
+	register_ui_component('repair_effective_source_markdown', EFFECTIVE_SOURCE_MARKDOWN)
 	register_ui_component('redetect_frame_button', REDETECT_FRAME_BUTTON)
 	register_ui_component('fix_no_swap_button', FIX_NO_SWAP_BUTTON)
 	register_ui_component('fix_distortion_button', FIX_DISTORTION_BUTTON)

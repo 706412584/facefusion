@@ -5,7 +5,7 @@ import signal
 import sys
 from time import time
 
-from facefusion import benchmarker, cli_helper, content_analyser, hash_helper, logger, state_manager, translator
+from facefusion import benchmarker, cli_helper, content_analyser, frame_override, hash_helper, logger, state_manager, translator
 from facefusion.args import apply_args, collect_job_args, reduce_job_args, reduce_step_args
 from facefusion.download import conditional_download_hashes, conditional_download_sources
 from facefusion.exit_helper import hard_exit, signal_exit
@@ -306,6 +306,8 @@ def process_step(job_id : str, step_index : int, step_args : Args) -> bool:
 	step_total = job_manager.count_step_total(job_id)
 	step_args.update(collect_job_args())
 	apply_args(step_args, state_manager.set_item)
+	# 每步独立装载补丁，避免多 step 任务串台；缺省则清空
+	frame_override.import_payload(step_args.get('frame_override'))
 
 	logger.info(translator.get('processing_step').format(step_current = step_index + 1, step_total = step_total), __name__)
 	if common_pre_check() and processors_pre_check():

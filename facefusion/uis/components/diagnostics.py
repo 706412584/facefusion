@@ -11,7 +11,7 @@ from facefusion.face_store import clear_faces
 from facefusion.filesystem import is_image, is_video
 from facefusion.processors.modules.face_debugger.core import draw_bounding_box, draw_face_landmark_5_68, draw_face_mask
 from facefusion.types import Face, VisionFrame
-from facefusion.uis.components.repair_options import apply_fix
+from facefusion.uis.components.repair_options import apply_by_scope, apply_fix
 from facefusion.uis.core import get_ui_component, register_ui_component
 
 DIAGNOSTICS_CHECKBOX : Optional[gradio.Checkbox] = None
@@ -30,7 +30,7 @@ def render() -> None:
 	global DIAGNOSTICS_FIX_DOUBLE_BUTTON
 	global DIAGNOSTICS_FIX_DISTORTION_BUTTON
 
-	gradio.Markdown('### 诊断（叠加检测信息，仅用于排查，不影响出片）')
+	gradio.Markdown('### 诊断（叠加检测信息，仅用于排查；就地修复跟随「疑难帧修复」作用域）')
 	DIAGNOSTICS_CHECKBOX = gradio.Checkbox(
 		label = '开启诊断',
 		value = False
@@ -88,20 +88,40 @@ def listen() -> None:
 	else:
 		DIAGNOSTICS_CHECKBOX.change(toggle_diagnostics, inputs = DIAGNOSTICS_CHECKBOX, outputs = outputs)
 
-	# 诊断面板内的修复按钮：应用修复参数 -> 回写左侧控件 -> 刷新主预览 -> 刷新诊断视图
+	# 诊断面板内的修复按钮：跟随 repair 作用域写入 -> 刷新主预览/诊断
 	if preview_frame_slider and preview_image and control_outputs:
 		preview_inputs = [ preview_mode_dropdown, preview_resolution_dropdown, preview_frame_slider ]
 		diagnostics_inputs = [ DIAGNOSTICS_CHECKBOX, preview_frame_slider ]
+		repair_scope_radio = get_ui_component('repair_scope_radio')
+		repair_range_start = get_ui_component('repair_range_start_number')
+		repair_range_end = get_ui_component('repair_range_end_number')
+		rules_markdown = get_ui_component('repair_rules_markdown')
+		effective_source_markdown = get_ui_component('repair_effective_source_markdown')
+		scope_inputs = None
+		if repair_scope_radio and repair_range_start and repair_range_end:
+			scope_inputs = [ repair_scope_radio, repair_range_start, repair_range_end, preview_frame_slider ]
+		meta_outputs = []
+		if rules_markdown and effective_source_markdown:
+			meta_outputs = [ rules_markdown, effective_source_markdown ]
 
-		for button, preset_name in\
+		for button, preset_name in
 		[
 			(DIAGNOSTICS_FIX_NO_SWAP_BUTTON, 'no_swap'),
 			(DIAGNOSTICS_FIX_DOUBLE_BUTTON, 'double'),
 			(DIAGNOSTICS_FIX_DISTORTION_BUTTON, 'distortion')
 		]:
-			button.click(lambda preset_name = preset_name : apply_fix(preset_name), outputs = control_outputs)\
-				.then(_refresh_preview, inputs = preview_inputs, outputs = preview_image)\
-				.then(update_diagnostics, inputs = diagnostics_inputs, outputs = outputs)
+			if scope_inputs:
+				button.click(
+					lambda scope, start, end, frame, preset_name = preset_name : _apply_diagnostics_fix(scope, start, end, frame, preset_name),
+					inputs = scope_inputs,
+					outputs = control_outputs + meta_outputs
+				).then(_refresh_preview, inputs = preview_inputs, outputs = preview_image).then(update_diagnostics, inputs = diagnostics_inputs, outputs = outputs)
+			else:
+				button.click(lambda preset_name = preset_name : apply_fix(preset_name), outputs = control_outputs).then(_refresh_preview, inputs = preview_inputs, outputs = preview_image).then(update_diagnostics, inputs = diagnostics_inputs, outputs = outputs)
+
+
+def _apply_diagnostics_fix(scope : str, range_start : float, range_end : float, frame_number : float, preset_name : str) -> Tuple[Any, ...]:
+	return apply_by_scope(scope, range_start, range_end, frame_number, preset_name, 'normal')
 
 
 def _collect_control_outputs() -> List[Any]:

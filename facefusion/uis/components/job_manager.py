@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple
 
 import gradio
 
-from facefusion import logger, state_manager, translator
+from facefusion import frame_override, logger, state_manager, translator
 from facefusion.args import collect_step_args
 from facefusion.common_helper import get_first, get_last
 from facefusion.filesystem import is_directory
@@ -89,6 +89,7 @@ def apply(job_action : JobManagerAction, created_job_id : str, selected_job_id :
 	selected_job_id = convert_str_none(selected_job_id)
 	selected_step_index = convert_int_none(selected_step_index)
 	step_args = collect_step_args()
+	frame_override.attach_to_step_args(step_args)
 	output_path = step_args.get('output_path')
 
 	if is_directory(step_args.get('output_path')):

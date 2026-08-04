@@ -81,3 +81,32 @@ def test_remove_and_clear() -> None:
 	frame_override.add_range_rule(1, 2, preset = 'edge')
 	frame_override.clear_all()
 	assert frame_override.list_rules() == []
+
+
+def test_export_import_payload_roundtrip() -> None:
+	frame_override.add_frame_rule(7, action = 'skip_process', label = 'skip')
+	frame_override.add_range_rule(10, 20, preset = 'double', label = 'dbl')
+	payload = frame_override.export_payload()
+	assert payload is not None
+	assert payload['version'] == 1
+	assert '7' in payload['frame_rules']
+
+	frame_override.clear_all()
+	assert frame_override.list_rules() == []
+	frame_override.import_payload(payload)
+	assert frame_override.resolve_frame_settings(7)['action'] == 'skip_process'
+	assert frame_override.resolve_frame_settings(15)['source'] == 'range'
+	assert frame_override.resolve_frame_settings(15)['params']['face_detector_score'] == 0.6
+
+	step_args = { 'target_path': 'x.mp4' }
+	frame_override.attach_to_step_args(step_args)
+	assert 'frame_override' in step_args
+	frame_override.clear_all()
+	frame_override.attach_to_step_args(step_args)
+	assert 'frame_override' not in step_args
+
+
+def test_import_payload_none_clears() -> None:
+	frame_override.add_frame_rule(1, action = 'skip_swap')
+	frame_override.import_payload(None)
+	assert frame_override.list_rules() == []

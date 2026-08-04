@@ -1,6 +1,6 @@
 # 疑难帧修复三层 Override — 修订方案（二审后）
 
-> 状态：Phase A/B 已实现（预览/播放/出片）；会话内补丁，不进 job JSON。  
+> 状态：Phase A/B + job JSON 持久化 + FACE_STORE 参数指纹 + diagnostics 作用域对齐 已实现。  
 > 日期：2026-08-05
 
 ## 1. 目标 / 非目标
@@ -47,8 +47,8 @@
    - 当前帧 / 区间 → 只写 override store，**不回写** 6 控件  
    - 规则列表 +「当前帧生效来源」  
    - 写规则后：`clear_faces()` + `update_preview_image` + 刷新列表/来源  
-7. `diagnostics`：MVP **仍写全局**并文案标明；或与 repair 共用 scope（实现时二选一，默认仍全局以免扩大面）  
-8. 生命周期：**仅当前 UI 进程**；换 target / 清空补丁按钮可清 store；**不进 job JSON**（文案写明）
+7. `diagnostics`：就地修复按钮跟随 repair 作用域（`apply_by_scope`）  
+8. 生命周期：UI 会话内可编辑；创建/运行 job 时 `attach_to_step_args` 写入 `steps[].args.frame_override`；`process_step` 导入
 
 ### Phase B — 出片（预览验收通过后）
 1. `workflows/core.process_temp_frame` 包同一 `apply_context(frame_number)`  
@@ -102,7 +102,11 @@ effective(frame) =
 | `facefusion/processors/modules/deep_swapper/core.py` | skip_swap |
 | `facefusion/workflows/core.py` | Phase B |
 | `facefusion/workflows/to_video.py` | Phase B reference 预热 |
-| `tests/test_frame_override.py` | 优先级 / context 隔离 |
+| `facefusion/core.py` | process_step 导入 frame_override |
+| `facefusion/uis/components/instant_runner.py` / `job_manager.py` | 写 job 时 attach 补丁 |
+| `facefusion/face_store.py` | 像素哈希 + 检测参数指纹 |
+| `facefusion/uis/components/diagnostics.py` | 作用域对齐 repair |
+| `tests/test_frame_override.py` | 优先级 / context / export-import |
 
 ## 7. 验收
 

@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple
 
 import gradio
 
-from facefusion import process_manager, state_manager, translator
+from facefusion import frame_override, process_manager, state_manager, translator
 from facefusion.args import collect_step_args
 from facefusion.core import process_step
 from facefusion.filesystem import is_directory, is_image, is_video
@@ -77,6 +77,7 @@ def start() -> Tuple[gradio.Button, gradio.Button]:
 
 def run() -> Tuple[gradio.Button, gradio.Button, gradio.Image, gradio.Video]:
 	step_args = collect_step_args()
+	frame_override.attach_to_step_args(step_args)
 	output_path = step_args.get('output_path')
 	target_paths = state_manager.get_item('target_paths') or ([ state_manager.get_item('target_path') ] if state_manager.get_item('target_path') else [])
 
