@@ -2,9 +2,9 @@ from typing import Any, List, Optional, Tuple
 
 import gradio
 
-import facefusion.choices
-from facefusion import config, state_manager
+from facefusion import config, frame_override, state_manager
 from facefusion.face_store import clear_faces
+from facefusion.filesystem import is_video
 from facefusion.uis.components.preview import update_preview_image
 from facefusion.uis.core import get_ui_component, register_ui_component
 
@@ -13,10 +13,19 @@ FIX_NO_SWAP_BUTTON : Optional[gradio.Button] = None
 FIX_DISTORTION_BUTTON : Optional[gradio.Button] = None
 FIX_DOUBLE_BUTTON : Optional[gradio.Button] = None
 FIX_EDGE_BUTTON : Optional[gradio.Button] = None
+SKIP_SWAP_BUTTON : Optional[gradio.Button] = None
+SKIP_PROCESS_BUTTON : Optional[gradio.Button] = None
 RESET_DEFAULT_BUTTON : Optional[gradio.Button] = None
+CLEAR_PATCHES_BUTTON : Optional[gradio.Button] = None
+DELETE_RULE_BUTTON : Optional[gradio.Button] = None
+REPAIR_SCOPE_RADIO : Optional[gradio.Radio] = None
+RANGE_START_NUMBER : Optional[gradio.Number] = None
+RANGE_END_NUMBER : Optional[gradio.Number] = None
+RULE_ID_TEXTBOX : Optional[gradio.Textbox] = None
+RULES_MARKDOWN : Optional[gradio.Markdown] = None
+EFFECTIVE_SOURCE_MARKDOWN : Optional[gradio.Markdown] = None
 
-# 这些修复方案只调整"检测 / 选脸 / 遮罩"层（真正决定某帧能否正确替换的环节），
-# 不切换检测器模型，避免触发模型下载或离线失败；参数会写入全局状态，因此对最终出片同样生效。
+SCOPE_CHOICES = [ '全局', '当前帧', '区间' ]
 
 
 def render() -> None:
@@ -25,36 +34,61 @@ def render() -> None:
 	global FIX_DISTORTION_BUTTON
 	global FIX_DOUBLE_BUTTON
 	global FIX_EDGE_BUTTON
+	global SKIP_SWAP_BUTTON
+	global SKIP_PROCESS_BUTTON
 	global RESET_DEFAULT_BUTTON
+	global CLEAR_PATCHES_BUTTON
+	global DELETE_RULE_BUTTON
+	global REPAIR_SCOPE_RADIO
+	global RANGE_START_NUMBER
+	global RANGE_END_NUMBER
+	global RULE_ID_TEXTBOX
+	global RULES_MARKDOWN
+	global EFFECTIVE_SOURCE_MARKDOWN
 
-	gradio.Markdown('### 疑难帧修复（作用于全局，出片同样生效）')
+	gradio.Markdown(
+		'### 疑难帧修复\n'
+		'**全局**改默认参数（控件会回写，出片也用这套默认）；'
+		'**当前帧 / 区间**写入补丁（仅本会话，预览与播放按帧生效；出片二期）。'
+		'优先级：单帧 > 时段 > 全局。左侧滑条始终显示全局 base。'
+	)
+	REPAIR_SCOPE_RADIO = gradio.Radio(
+		label = '作用域',
+		choices = SCOPE_CHOICES,
+		value = '全局'
+	)
 	with gradio.Row():
-		REDETECT_FRAME_BUTTON = gradio.Button(
-			value = '重新检测此帧',
-			size = 'sm'
+		RANGE_START_NUMBER = gradio.Number(
+			label = '区间起帧',
+			value = 0,
+			precision = 0
 		)
-		FIX_NO_SWAP_BUTTON = gradio.Button(
-			value = '人脸不替换',
-			size = 'sm'
-		)
-	with gradio.Row():
-		FIX_DISTORTION_BUTTON = gradio.Button(
-			value = '面部扭曲/歪斜',
-			size = 'sm'
-		)
-		FIX_DOUBLE_BUTTON = gradio.Button(
-			value = '两脸重合/重复换',
-			size = 'sm'
+		RANGE_END_NUMBER = gradio.Number(
+			label = '区间止帧',
+			value = 0,
+			precision = 0
 		)
 	with gradio.Row():
-		FIX_EDGE_BUTTON = gradio.Button(
-			value = '边缘/遮挡穿帮',
-			size = 'sm'
-		)
-		RESET_DEFAULT_BUTTON = gradio.Button(
-			value = '恢复默认参数',
-			size = 'sm'
-		)
+		REDETECT_FRAME_BUTTON = gradio.Button(value = '重新检测此帧', size = 'sm')
+		FIX_NO_SWAP_BUTTON = gradio.Button(value = '人脸不替换', size = 'sm')
+	with gradio.Row():
+		FIX_DISTORTION_BUTTON = gradio.Button(value = '面部扭曲/歪斜', size = 'sm')
+		FIX_DOUBLE_BUTTON = gradio.Button(value = '两脸重合/重复换', size = 'sm')
+	with gradio.Row():
+		FIX_EDGE_BUTTON = gradio.Button(value = '边缘/遮挡穿帮', size = 'sm')
+		RESET_DEFAULT_BUTTON = gradio.Button(value = '恢复默认参数(全局)', size = 'sm')
+	with gradio.Row():
+		SKIP_SWAP_BUTTON = gradio.Button(value = '跳过换脸(本帧/区间)', size = 'sm')
+		SKIP_PROCESS_BUTTON = gradio.Button(value = '强制不处理(原画)', size = 'sm')
+	with gradio.Row():
+		CLEAR_PATCHES_BUTTON = gradio.Button(value = '清空全部补丁', size = 'sm')
+		RULE_ID_TEXTBOX = gradio.Textbox(label = '删除规则 id', placeholder = '粘贴规则 id', lines = 1)
+		DELETE_RULE_BUTTON = gradio.Button(value = '删除指定规则', size = 'sm')
+
+	EFFECTIVE_SOURCE_MARKDOWN = gradio.Markdown(value = frame_override.format_effective_source(0))
+	RULES_MARKDOWN = gradio.Markdown(value = frame_override.format_rules_markdown())
+
+	register_ui_component('repair_scope_radio', REPAIR_SCOPE_RADIO)
 	register_ui_component('redetect_frame_button', REDETECT_FRAME_BUTTON)
 	register_ui_component('fix_no_swap_button', FIX_NO_SWAP_BUTTON)
 	register_ui_component('fix_distortion_button', FIX_DISTORTION_BUTTON)
@@ -70,12 +104,15 @@ def listen() -> None:
 	preview_frame_slider = get_ui_component('preview_frame_slider')
 	control_outputs = _collect_control_outputs()
 	preview_inputs = [ preview_mode_dropdown, preview_resolution_dropdown, preview_frame_slider ]
+	meta_outputs = [ RULES_MARKDOWN, EFFECTIVE_SOURCE_MARKDOWN ]
 
 	if not all(preview_inputs) or not preview_image:
 		return
 
-	# 重新检测：清掉这一帧的检测缓存后重算预览（不改参数）
-	REDETECT_FRAME_BUTTON.click(redetect_frame, inputs = preview_inputs, outputs = preview_image)
+	scope_inputs = [ REPAIR_SCOPE_RADIO, RANGE_START_NUMBER, RANGE_END_NUMBER, preview_frame_slider ]
+
+	REDETECT_FRAME_BUTTON.click(redetect_frame, inputs = preview_inputs, outputs = preview_image)\
+		.then(refresh_meta, inputs = [ preview_frame_slider ], outputs = meta_outputs)
 
 	for button, preset_name in\
 	[
@@ -84,13 +121,37 @@ def listen() -> None:
 		(FIX_DOUBLE_BUTTON, 'double'),
 		(FIX_EDGE_BUTTON, 'edge')
 	]:
-		# 先应用修复参数并回写控件，再清缓存刷新预览
-		button.click(lambda preset_name = preset_name : apply_fix(preset_name), outputs = control_outputs)\
-			.then(redetect_frame, inputs = preview_inputs, outputs = preview_image)
+		button.click(
+			lambda scope, start, end, frame, preset_name = preset_name : apply_by_scope(scope, start, end, frame, preset_name, 'normal'),
+			inputs = scope_inputs,
+			outputs = control_outputs + meta_outputs
+		).then(redetect_frame, inputs = preview_inputs, outputs = preview_image)
 
-	# 恢复默认：把检测/选脸/遮罩参数还原成程序启动时的默认值，再清缓存刷新预览
+	SKIP_SWAP_BUTTON.click(
+		lambda scope, start, end, frame : apply_by_scope(scope, start, end, frame, None, 'skip_swap'),
+		inputs = scope_inputs,
+		outputs = control_outputs + meta_outputs
+	).then(redetect_frame, inputs = preview_inputs, outputs = preview_image)
+
+	SKIP_PROCESS_BUTTON.click(
+		lambda scope, start, end, frame : apply_by_scope(scope, start, end, frame, None, 'skip_process'),
+		inputs = scope_inputs,
+		outputs = control_outputs + meta_outputs
+	).then(redetect_frame, inputs = preview_inputs, outputs = preview_image)
+
 	RESET_DEFAULT_BUTTON.click(reset_defaults, outputs = control_outputs)\
+		.then(redetect_frame, inputs = preview_inputs, outputs = preview_image)\
+		.then(refresh_meta, inputs = [ preview_frame_slider ], outputs = meta_outputs)
+
+	CLEAR_PATCHES_BUTTON.click(clear_patches, outputs = meta_outputs)\
 		.then(redetect_frame, inputs = preview_inputs, outputs = preview_image)
+
+	DELETE_RULE_BUTTON.click(delete_rule, inputs = [ RULE_ID_TEXTBOX, preview_frame_slider ], outputs = meta_outputs)\
+		.then(redetect_frame, inputs = preview_inputs, outputs = preview_image)
+
+	if preview_frame_slider:
+		preview_frame_slider.release(refresh_meta, inputs = [ preview_frame_slider ], outputs = meta_outputs, show_progress = 'hidden')
+		preview_frame_slider.change(refresh_meta, inputs = [ preview_frame_slider ], outputs = meta_outputs, show_progress = 'hidden', trigger_mode = 'once')
 
 
 def _collect_control_outputs() -> List[Any]:
@@ -107,43 +168,70 @@ def _collect_control_outputs() -> List[Any]:
 
 
 def redetect_frame(preview_mode : str, preview_resolution : str, frame_number : int = 0) -> gradio.Image:
-	# 人脸检测结果按帧像素哈希缓存，必须先清缓存，改过的检测参数才会重新生效
 	clear_faces()
 	return update_preview_image(preview_mode, preview_resolution, frame_number)
 
 
+def refresh_meta(frame_number : int = 0) -> Tuple[gradio.Markdown, gradio.Markdown]:
+	return gradio.Markdown(value = frame_override.format_rules_markdown()), gradio.Markdown(value = frame_override.format_effective_source(int(frame_number or 0)))
+
+
+def clear_patches() -> Tuple[gradio.Markdown, gradio.Markdown]:
+	frame_override.clear_all()
+	clear_faces()
+	return refresh_meta(0)
+
+
+def delete_rule(rule_id : str, frame_number : int = 0) -> Tuple[gradio.Markdown, gradio.Markdown]:
+	if rule_id:
+		frame_override.remove_rule(rule_id.strip())
+		clear_faces()
+	return refresh_meta(frame_number)
+
+
+def apply_by_scope(scope : str, range_start : float, range_end : float, frame_number : float, preset_name : Optional[str], action : str) -> Tuple[Any, ...]:
+	scope_key = _normalize_scope(scope)
+	frame_number = int(frame_number or 0)
+	start_frame = int(range_start or 0)
+	end_frame = int(range_end or 0)
+
+	if scope_key == 'global':
+		if action in { 'skip_swap', 'skip_process' }:
+			# 跳过类动作无全局语义，降级为当前帧补丁
+			frame_override.add_frame_rule(frame_number, action = action, label = action) #type:ignore[arg-type]
+			return _empty_control_values() + refresh_meta(frame_number)
+		if preset_name:
+			apply_fix(preset_name)
+		return _build_control_values() + refresh_meta(frame_number)
+
+	params = {}
+	if preset_name:
+		params = frame_override.build_preset_params(preset_name, current_mask_types = state_manager.get_item('face_mask_types'))
+
+	if scope_key == 'frame':
+		frame_override.add_frame_rule(frame_number, action = action, preset = preset_name, params = params, label = preset_name or action) #type:ignore[arg-type]
+	elif scope_key == 'range':
+		if end_frame < start_frame:
+			start_frame, end_frame = end_frame, start_frame
+		if start_frame == end_frame == 0 and is_video(state_manager.get_item('target_path')):
+			# 未填区间时，用当前帧作为单点区间，避免误写 0-0 全片
+			start_frame = frame_number
+			end_frame = frame_number
+		frame_override.add_range_rule(start_frame, end_frame, action = action, preset = preset_name, params = params, label = preset_name or action) #type:ignore[arg-type]
+
+	# 帧/区间不回写全局控件
+	return _empty_control_values() + refresh_meta(frame_number)
+
+
 def apply_fix(preset_name : str) -> Tuple[gradio.CheckboxGroup, gradio.Slider, gradio.Slider, gradio.Slider, gradio.CheckboxGroup, gradio.Slider]:
-	if preset_name == 'no_swap':
-		# 人脸漏检 / 匹配过严：开多角度检测、降低检测阈值、放宽参考人脸匹配距离
-		state_manager.set_item('face_detector_angles', [ 0, 90, 180, 270 ])
-		state_manager.set_item('face_detector_score', 0.3)
-		state_manager.set_item('reference_face_distance', 0.6)
-
-	if preset_name == 'distortion':
-		# 关键点拟合错误导致的扭曲：提高关键点采用阈值（不确定时退回更稳的检测点）、
-		# 略升检测阈值丢弃低质量误检、开多角度并叠加遮挡遮罩
-		state_manager.set_item('face_landmarker_score', 0.5)
-		state_manager.set_item('face_detector_score', 0.5)
-		state_manager.set_item('face_detector_angles', [ 0, 90, 180, 270 ])
-		_ensure_mask_type('occlusion')
-
-	if preset_name == 'double':
-		# 两脸重合 / 同一张脸被换两次：大角度仰头/侧脸时多角度会重复检出同一张脸。
-		# 收紧到单一角度减少重复源，并提高检测/关键点阈值丢弃低质量的重复框。
-		state_manager.set_item('face_detector_angles', [ 0 ])
-		state_manager.set_item('face_detector_score', 0.6)
-		state_manager.set_item('face_landmarker_score', 0.5)
-
-	if preset_name == 'edge':
-		# 边缘 / 遮挡穿帮：框遮罩 + 遮挡遮罩，并加大边缘羽化
-		state_manager.set_item('face_mask_types', [ 'box', 'occlusion' ])
-		state_manager.set_item('face_mask_blur', 0.5)
-
+	"""供 diagnostics 等继续按「全局」调用。"""
+	params = frame_override.build_preset_params(preset_name, current_mask_types = state_manager.get_item('face_mask_types'))
+	for key, value in params.items():
+		state_manager.set_item(key, value) #type:ignore[arg-type]
 	return _build_control_values()
 
 
 def reset_defaults() -> Tuple[gradio.CheckboxGroup, gradio.Slider, gradio.Slider, gradio.Slider, gradio.CheckboxGroup, gradio.Slider]:
-	# 按程序启动时的来源（配置文件 + 与 program.py 相同的回退值）还原各参数
 	state_manager.set_item('face_detector_angles', config.get_int_list('face_detector', 'face_detector_angles', '0'))
 	state_manager.set_item('face_detector_score', config.get_float_value('face_detector', 'face_detector_score', '0.5'))
 	state_manager.set_item('face_landmarker_score', config.get_float_value('face_landmarker', 'face_landmarker_score', '0.5'))
@@ -153,15 +241,26 @@ def reset_defaults() -> Tuple[gradio.CheckboxGroup, gradio.Slider, gradio.Slider
 	return _build_control_values()
 
 
-def _ensure_mask_type(mask_type : str) -> None:
-	face_mask_types = list(state_manager.get_item('face_mask_types') or [])
-	if mask_type not in face_mask_types:
-		face_mask_types.append(mask_type)
-	state_manager.set_item('face_mask_types', face_mask_types)
+def _normalize_scope(scope : str) -> str:
+	if scope in { '当前帧', 'frame' }:
+		return 'frame'
+	if scope in { '区间', 'range' }:
+		return 'range'
+	return 'global'
+
+
+def _empty_control_values() -> Tuple[gradio.CheckboxGroup, gradio.Slider, gradio.Slider, gradio.Slider, gradio.CheckboxGroup, gradio.Slider]:
+	return (
+		gradio.CheckboxGroup(),
+		gradio.Slider(),
+		gradio.Slider(),
+		gradio.Slider(),
+		gradio.CheckboxGroup(),
+		gradio.Slider()
+	)
 
 
 def _build_control_values() -> Tuple[gradio.CheckboxGroup, gradio.Slider, gradio.Slider, gradio.Slider, gradio.CheckboxGroup, gradio.Slider]:
-	# 全部按当前状态回写，保证控件与实际生效参数一致；遮罩相关面板的显隐由其 change 级联自动处理
 	return (
 		gradio.CheckboxGroup(value = state_manager.get_item('face_detector_angles')),
 		gradio.Slider(value = state_manager.get_item('face_detector_score')),

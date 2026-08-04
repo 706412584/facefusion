@@ -5,7 +5,7 @@ import cv2
 import gradio
 import numpy
 
-from facefusion import logger, process_manager, state_manager, translator
+from facefusion import frame_override, logger, process_manager, state_manager, translator
 from facefusion.audio import create_empty_audio_frame, get_voice_frame
 from facefusion.common_helper import get_first, get_middle
 from facefusion.content_analyser import analyse_frame
@@ -223,7 +223,8 @@ def update_preview_image(preview_mode : PreviewMode, preview_resolution : str, f
 	if is_video(state_manager.get_item('target_path')):
 		reference_vision_frame = read_video_frame(state_manager.get_item('target_path'), state_manager.get_item('reference_frame_number'))
 		target_vision_frames = select_video_frames(state_manager.get_item('target_path'), frame_number, state_manager.get_item('target_frame_amount'))
-		preview_vision_frame = process_preview_frame(reference_vision_frame, source_vision_frames, source_audio_frame, source_voice_frame, target_vision_frames, preview_mode, preview_resolution)
+		with frame_override.apply_context(frame_number):
+			preview_vision_frame = process_preview_frame(reference_vision_frame, source_vision_frames, source_audio_frame, source_voice_frame, target_vision_frames, preview_mode, preview_resolution)
 		preview_vision_frame = cv2.cvtColor(preview_vision_frame, cv2.COLOR_BGRA2RGBA)
 		return gradio.Image(value = preview_vision_frame, elem_classes = [ 'image-preview', 'is-' + detect_frame_orientation(preview_vision_frame) ])
 	return gradio.Image(value = None, elem_classes = None)
@@ -259,6 +260,15 @@ def process_preview_frame(reference_vision_frame : VisionFrame, source_vision_fr
 
 	# 跳过预览内容检测（本地定制）
 	# if analyse_frame(...): obscure preview frames
+
+	if frame_override.get_context_action() == 'skip_process':
+		temp_vision_frame = prepare_output_frame(target_vision_frame, target_vision_frame.copy(), temp_vision_mask)
+		if preview_mode == 'frame-by-frame':
+			return numpy.hstack((target_vision_frame, temp_vision_frame))
+		if preview_mode == 'face-by-face':
+			target_crop_vision_frame, output_crop_vision_frame = create_face_by_face(reference_vision_frame, source_vision_frames, target_vision_frame, temp_vision_frame)
+			return numpy.hstack((target_crop_vision_frame, output_crop_vision_frame))
+		return temp_vision_frame
 
 	for processor_module in get_processors_modules(state_manager.get_item('processors')):
 		logger.disable()

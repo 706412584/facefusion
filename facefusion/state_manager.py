@@ -26,6 +26,15 @@ def init_item(key : Union[StateKey, ProcessorStateKey], value : Any) -> None:
 
 
 def get_item(key : Union[StateKey, ProcessorStateKey]) -> Any:
+	# 仅在帧覆盖 context 激活且 key 属于白名单时返回覆盖值，否则保持全局 state。
+	try:
+		from facefusion import frame_override
+
+		override_value = frame_override.get_override_item(str(key))
+		if override_value is not None:
+			return override_value
+	except Exception:
+		pass
 	return get_state().get(key) #type:ignore[literal-required]
 
 

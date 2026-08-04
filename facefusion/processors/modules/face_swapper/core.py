@@ -789,6 +789,10 @@ def process_frame(inputs : FaceSwapperInputs) -> ProcessorOutputs:
 	temp_vision_frame = inputs.get('temp_vision_frame')
 	temp_vision_mask = inputs.get('temp_vision_mask')
 
+	from facefusion.frame_override import get_context_action
+	if get_context_action() == 'skip_swap':
+		return temp_vision_frame, temp_vision_mask
+
 	target_vision_frame = get_middle(target_vision_frames)
 	source_paths = state_manager.get_item('source_paths')
 	source_face = resolve_average_source_face(tuple(source_paths)) if source_paths else extract_source_face(source_vision_frames)
