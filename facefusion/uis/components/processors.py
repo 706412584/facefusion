@@ -6,6 +6,7 @@ from facefusion import state_manager, translator
 from facefusion.filesystem import get_file_name, resolve_file_paths
 from facefusion.processors.core import get_processors_modules
 from facefusion.uis.core import register_ui_component
+from facefusion.uis.ui_tips import tip
 
 PROCESSORS_CHECKBOX_GROUP : Optional[gradio.CheckboxGroup] = None
 
@@ -16,7 +17,8 @@ def render() -> None:
 	PROCESSORS_CHECKBOX_GROUP = gradio.CheckboxGroup(
 		label = translator.get('uis.processors_checkbox_group'),
 		choices = translator.translate_choices(sort_processors()),
-		value = state_manager.get_item('processors')
+		value = state_manager.get_item('processors'),
+		info = tip('processors')
 	)
 	register_ui_component('processors_checkbox_group', PROCESSORS_CHECKBOX_GROUP)
 

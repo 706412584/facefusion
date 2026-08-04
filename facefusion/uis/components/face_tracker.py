@@ -7,6 +7,7 @@ from facefusion import state_manager, translator
 from facefusion.common_helper import calculate_float_step
 from facefusion.types import Score
 from facefusion.uis.core import register_ui_component
+from facefusion.uis.ui_tips import tip
 
 FACE_TRACKER_SCORE_SLIDER : Optional[gradio.Slider] = None
 
@@ -19,7 +20,8 @@ def render() -> None:
 		value = state_manager.get_item('face_tracker_score'),
 		step = calculate_float_step(facefusion.choices.face_tracker_score_range),
 		minimum = facefusion.choices.face_tracker_score_range[0],
-		maximum = facefusion.choices.face_tracker_score_range[-1]
+		maximum = facefusion.choices.face_tracker_score_range[-1],
+		info = tip('face_tracker_score')
 	)
 	register_ui_component('face_tracker_score_slider', FACE_TRACKER_SCORE_SLIDER)
 

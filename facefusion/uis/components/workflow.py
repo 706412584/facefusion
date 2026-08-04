@@ -5,6 +5,7 @@ import gradio
 import facefusion.choices
 from facefusion import state_manager, translator
 from facefusion.types import WorkflowStrategy
+from facefusion.uis.ui_tips import tip
 
 WORKFLOW_STRATEGY_DROPDOWN : Optional[gradio.Dropdown] = None
 
@@ -15,7 +16,8 @@ def render() -> None:
 	WORKFLOW_STRATEGY_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.workflow_strategy_dropdown'),
 		choices = facefusion.choices.workflow_strategies,
-		value = state_manager.get_item('workflow_strategy')
+		value = state_manager.get_item('workflow_strategy'),
+		info = tip('workflow_strategy')
 	)
 
 

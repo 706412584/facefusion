@@ -7,6 +7,7 @@ from facefusion import face_landmarker, state_manager, translator
 from facefusion.common_helper import calculate_float_step
 from facefusion.types import FaceLandmarkerModel, Score
 from facefusion.uis.core import register_ui_component
+from facefusion.uis.ui_tips import tip
 
 FACE_LANDMARKER_MODEL_DROPDOWN : Optional[gradio.Dropdown] = None
 FACE_LANDMARKER_SCORE_SLIDER : Optional[gradio.Slider] = None
@@ -19,14 +20,16 @@ def render() -> None:
 	FACE_LANDMARKER_MODEL_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.face_landmarker_model_dropdown'),
 		choices = translator.translate_choices(facefusion.choices.face_landmarker_models),
-		value = translator.translate_choice(state_manager.get_item('face_landmarker_model'))
+		value = translator.translate_choice(state_manager.get_item('face_landmarker_model')),
+		info = tip('face_landmarker_model')
 	)
 	FACE_LANDMARKER_SCORE_SLIDER = gradio.Slider(
 		label = translator.get('uis.face_landmarker_score_slider'),
 		value = state_manager.get_item('face_landmarker_score'),
 		step = calculate_float_step(facefusion.choices.face_landmarker_score_range),
 		minimum = facefusion.choices.face_landmarker_score_range[0],
-		maximum = facefusion.choices.face_landmarker_score_range[-1]
+		maximum = facefusion.choices.face_landmarker_score_range[-1],
+		info = tip('face_landmarker_score')
 	)
 	register_ui_component('face_landmarker_model_dropdown', FACE_LANDMARKER_MODEL_DROPDOWN)
 	register_ui_component('face_landmarker_score_slider', FACE_LANDMARKER_SCORE_SLIDER)

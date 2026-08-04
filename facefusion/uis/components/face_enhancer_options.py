@@ -8,6 +8,7 @@ from facefusion.processors.core import load_processor_module
 from facefusion.processors.modules.face_enhancer import choices as face_enhancer_choices
 from facefusion.processors.modules.face_enhancer.types import FaceEnhancerModel, FaceEnhancerWeight
 from facefusion.uis.core import get_ui_component, register_ui_component
+from facefusion.uis.ui_tips import tip
 
 FACE_ENHANCER_MODEL_DROPDOWN : Optional[gradio.Dropdown] = None
 FACE_ENHANCER_BLEND_SLIDER : Optional[gradio.Slider] = None
@@ -24,7 +25,8 @@ def render() -> None:
 		label = translator.get('uis.model_dropdown', 'facefusion.processors.modules.face_enhancer'),
 		choices = translator.translate_choices(face_enhancer_choices.face_enhancer_models),
 		value = translator.translate_choice(state_manager.get_item('face_enhancer_model')),
-		visible = has_face_enhancer
+		visible = has_face_enhancer,
+		info = tip('face_enhancer_model')
 	)
 	FACE_ENHANCER_BLEND_SLIDER = gradio.Slider(
 		label = translator.get('uis.blend_slider', 'facefusion.processors.modules.face_enhancer'),
@@ -32,7 +34,8 @@ def render() -> None:
 		step = calculate_int_step(face_enhancer_choices.face_enhancer_blend_range),
 		minimum = face_enhancer_choices.face_enhancer_blend_range[0],
 		maximum = face_enhancer_choices.face_enhancer_blend_range[-1],
-		visible = has_face_enhancer
+		visible = has_face_enhancer,
+		info = tip('face_enhancer_blend')
 	)
 	FACE_ENHANCER_WEIGHT_SLIDER = gradio.Slider(
 		label = translator.get('uis.weight_slider', 'facefusion.processors.modules.face_enhancer'),
@@ -40,7 +43,8 @@ def render() -> None:
 		step = calculate_float_step(face_enhancer_choices.face_enhancer_weight_range),
 		minimum = face_enhancer_choices.face_enhancer_weight_range[0],
 		maximum = face_enhancer_choices.face_enhancer_weight_range[-1],
-		visible = has_face_enhancer and load_processor_module('face_enhancer').get_inference_pool() and load_processor_module('face_enhancer').has_weight_input()
+		visible = has_face_enhancer and load_processor_module('face_enhancer').get_inference_pool() and load_processor_module('face_enhancer').has_weight_input(),
+		info = tip('face_enhancer_weight')
 	)
 	register_ui_component('face_enhancer_model_dropdown', FACE_ENHANCER_MODEL_DROPDOWN)
 	register_ui_component('face_enhancer_blend_slider', FACE_ENHANCER_BLEND_SLIDER)

@@ -9,6 +9,7 @@ from facefusion.ffmpeg import get_available_encoder_set
 from facefusion.filesystem import is_image, is_video
 from facefusion.types import AudioEncoder, Fps, Scale, VideoEncoder, VideoPreset
 from facefusion.uis.core import get_ui_components, register_ui_component
+from facefusion.uis.ui_tips import tip
 from facefusion.vision import detect_video_fps
 
 OUTPUT_IMAGE_QUALITY_SLIDER : Optional[gradio.Slider] = None
@@ -79,7 +80,8 @@ def render() -> None:
 		label = translator.get('uis.output_video_encoder_dropdown'),
 		choices = translator.translate_choices(available_encoder_set.get('video')),
 		value = translator.translate_choice(state_manager.get_item('output_video_encoder')),
-		visible = is_video(state_manager.get_item('target_path'))
+		visible = is_video(state_manager.get_item('target_path')),
+		info = tip('output_video_encoder')
 	)
 	OUTPUT_VIDEO_PRESET_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.output_video_preset_dropdown'),
@@ -93,7 +95,8 @@ def render() -> None:
 		step = calculate_int_step(facefusion.choices.output_video_quality_range),
 		minimum = facefusion.choices.output_video_quality_range[0],
 		maximum = facefusion.choices.output_video_quality_range[-1],
-		visible = is_video(state_manager.get_item('target_path'))
+		visible = is_video(state_manager.get_item('target_path')),
+		info = tip('output_video_quality')
 	)
 	OUTPUT_VIDEO_SCALE_SLIDER = gradio.Slider(
 		label = translator.get('uis.output_video_scale_slider'),

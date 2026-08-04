@@ -5,6 +5,7 @@ import gradio
 import facefusion.choices
 from facefusion import state_manager, translator
 from facefusion.common_helper import calculate_int_step
+from facefusion.uis.ui_tips import tip
 
 EXECUTION_THREAD_COUNT_SLIDER : Optional[gradio.Slider] = None
 
@@ -17,7 +18,8 @@ def render() -> None:
 		value = state_manager.get_item('execution_thread_count'),
 		step = calculate_int_step(facefusion.choices.execution_thread_count_range),
 		minimum = facefusion.choices.execution_thread_count_range[0],
-		maximum = facefusion.choices.execution_thread_count_range[-1]
+		maximum = facefusion.choices.execution_thread_count_range[-1],
+		info = tip('execution_thread_count')
 	)
 
 

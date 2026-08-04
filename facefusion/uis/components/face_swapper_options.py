@@ -8,6 +8,7 @@ from facefusion.processors.core import load_processor_module
 from facefusion.processors.modules.face_swapper import choices as face_swapper_choices
 from facefusion.processors.modules.face_swapper.types import FaceSwapperModel, FaceSwapperWeight
 from facefusion.uis.core import get_ui_component, register_ui_component
+from facefusion.uis.ui_tips import tip
 
 FACE_SWAPPER_MODEL_DROPDOWN : Optional[gradio.Dropdown] = None
 FACE_SWAPPER_PIXEL_BOOST_DROPDOWN : Optional[gradio.Dropdown] = None
@@ -24,13 +25,15 @@ def render() -> None:
 		label = translator.get('uis.model_dropdown', 'facefusion.processors.modules.face_swapper'),
 		choices = translator.translate_choices(face_swapper_choices.face_swapper_models),
 		value = translator.translate_choice(state_manager.get_item('face_swapper_model')),
-		visible = has_face_swapper
+		visible = has_face_swapper,
+		info = tip('face_swapper_model')
 	)
 	FACE_SWAPPER_PIXEL_BOOST_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.pixel_boost_dropdown', 'facefusion.processors.modules.face_swapper'),
 		choices = face_swapper_choices.face_swapper_set.get(state_manager.get_item('face_swapper_model')),
 		value = state_manager.get_item('face_swapper_pixel_boost'),
-		visible = has_face_swapper
+		visible = has_face_swapper,
+		info = tip('face_swapper_pixel_boost')
 	)
 	FACE_SWAPPER_WEIGHT_SLIDER = gradio.Slider(
 		label = translator.get('uis.weight_slider', 'facefusion.processors.modules.face_swapper'),
@@ -38,7 +41,8 @@ def render() -> None:
 		minimum = face_swapper_choices.face_swapper_weight_range[0],
 		maximum = face_swapper_choices.face_swapper_weight_range[-1],
 		step = calculate_float_step(face_swapper_choices.face_swapper_weight_range),
-		visible = has_face_swapper and has_face_swapper_weight()
+		visible = has_face_swapper and has_face_swapper_weight(),
+		info = tip('face_swapper_weight')
 	)
 	register_ui_component('face_swapper_model_dropdown', FACE_SWAPPER_MODEL_DROPDOWN)
 	register_ui_component('face_swapper_pixel_boost_dropdown', FACE_SWAPPER_PIXEL_BOOST_DROPDOWN)

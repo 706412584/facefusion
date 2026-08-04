@@ -5,6 +5,7 @@ import gradio
 import facefusion.choices
 from facefusion import state_manager, translator
 from facefusion.types import VideoMemoryStrategy
+from facefusion.uis.ui_tips import tip
 
 VIDEO_MEMORY_STRATEGY_DROPDOWN : Optional[gradio.Dropdown] = None
 
@@ -15,7 +16,8 @@ def render() -> None:
 	VIDEO_MEMORY_STRATEGY_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.video_memory_strategy_dropdown'),
 		choices = translator.translate_choices(facefusion.choices.video_memory_strategies),
-		value = translator.translate_choice(state_manager.get_item('video_memory_strategy'))
+		value = translator.translate_choice(state_manager.get_item('video_memory_strategy')),
+		info = tip('video_memory_strategy')
 	)
 
 

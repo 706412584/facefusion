@@ -8,6 +8,7 @@ from facefusion.common_helper import calculate_float_step, calculate_int_step
 from facefusion.sanitizer import sanitize_int_range
 from facefusion.types import FaceMaskArea, FaceMaskRegion, FaceMaskType, FaceOccluderModel, FaceParserModel
 from facefusion.uis.core import register_ui_component
+from facefusion.uis.ui_tips import tip
 
 FACE_OCCLUDER_MODEL_DROPDOWN : Optional[gradio.Dropdown] = None
 FACE_PARSER_MODEL_DROPDOWN : Optional[gradio.Dropdown] = None
@@ -42,17 +43,20 @@ def render() -> None:
 		FACE_OCCLUDER_MODEL_DROPDOWN = gradio.Dropdown(
 			label = translator.get('uis.face_occluder_model_dropdown'),
 			choices = translator.translate_choices(facefusion.choices.face_occluder_models),
-			value = translator.translate_choice(state_manager.get_item('face_occluder_model'))
+			value = translator.translate_choice(state_manager.get_item('face_occluder_model')),
+			info = tip('face_occluder_model')
 		)
 		FACE_PARSER_MODEL_DROPDOWN = gradio.Dropdown(
 			label = translator.get('uis.face_parser_model_dropdown'),
 			choices = translator.translate_choices(facefusion.choices.face_parser_models),
-			value = translator.translate_choice(state_manager.get_item('face_parser_model'))
+			value = translator.translate_choice(state_manager.get_item('face_parser_model')),
+			info = tip('face_parser_model')
 		)
 	FACE_MASK_TYPES_CHECKBOX_GROUP = gradio.CheckboxGroup(
 		label = translator.get('uis.face_mask_types_checkbox_group'),
 		choices = translator.translate_choices(facefusion.choices.face_mask_types),
-		value = state_manager.get_item('face_mask_types')
+		value = state_manager.get_item('face_mask_types'),
+		info = tip('face_mask_types')
 	)
 	FACE_MASK_AREAS_CHECKBOX_GROUP = gradio.CheckboxGroup(
 		label = translator.get('uis.face_mask_areas_checkbox_group'),
@@ -72,7 +76,8 @@ def render() -> None:
 		minimum = facefusion.choices.face_mask_blur_range[0],
 		maximum = facefusion.choices.face_mask_blur_range[-1],
 		value = state_manager.get_item('face_mask_blur'),
-		visible = has_box_mask
+		visible = has_box_mask,
+		info = tip('face_mask_blur')
 	)
 	with gradio.Group(visible = has_box_mask) as FACE_MASK_BOX_WRAPPER:
 		with gradio.Row():
@@ -81,7 +86,8 @@ def render() -> None:
 				step = calculate_int_step(facefusion.choices.face_mask_padding_range),
 				minimum = facefusion.choices.face_mask_padding_range[0],
 				maximum = facefusion.choices.face_mask_padding_range[-1],
-				value = state_manager.get_item('face_mask_padding')[0]
+				value = state_manager.get_item('face_mask_padding')[0],
+				info = tip('face_mask_padding')
 			)
 			FACE_MASK_PADDING_RIGHT_SLIDER = gradio.Slider(
 				label = translator.get('uis.face_mask_padding_right_slider'),

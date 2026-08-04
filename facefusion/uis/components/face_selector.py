@@ -15,6 +15,7 @@ from facefusion.types import FaceSelectorGender, FaceSelectorMode, FaceSelectorO
 from facefusion.uis.core import get_ui_component, get_ui_components, register_ui_component
 from facefusion.uis.types import ComponentOptions
 from facefusion.uis.ui_helper import convert_str_none
+from facefusion.uis.ui_tips import tip
 from facefusion.vision import fit_cover_frame, read_static_image, read_static_images, read_video_frame
 
 FACE_SELECTOR_MODE_DROPDOWN : Optional[gradio.Dropdown] = None
@@ -37,7 +38,7 @@ def render() -> None:
 
 	reference_face_gallery_options : ComponentOptions =\
 	{
-		'label': translator.get('uis.reference_face_gallery'),
+		'label': translator.get('uis.reference_face_gallery') + ' — ' + tip('reference_face_gallery'),
 		'object_fit': 'cover',
 		'allow_preview': False,
 		'elem_classes': 'box-face-selector',
@@ -54,7 +55,8 @@ def render() -> None:
 	FACE_SELECTOR_MODE_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.face_selector_mode_dropdown'),
 		choices = translator.translate_choices(facefusion.choices.face_selector_modes),
-		value = translator.translate_choice(state_manager.get_item('face_selector_mode'))
+		value = translator.translate_choice(state_manager.get_item('face_selector_mode')),
+		info = tip('face_selector_mode')
 	)
 	REFERENCE_FACE_POSITION_GALLERY = gradio.Gallery(**reference_face_gallery_options)
 	with gradio.Group():
@@ -62,17 +64,20 @@ def render() -> None:
 			FACE_SELECTOR_ORDER_DROPDOWN = gradio.Dropdown(
 				label = translator.get('uis.face_selector_order_dropdown'),
 				choices = translator.translate_choices(facefusion.choices.face_selector_orders),
-				value = translator.translate_choice(state_manager.get_item('face_selector_order'))
+				value = translator.translate_choice(state_manager.get_item('face_selector_order')),
+				info = tip('face_selector_order')
 			)
 			FACE_SELECTOR_GENDER_DROPDOWN = gradio.Dropdown(
 				label = translator.get('uis.face_selector_gender_dropdown'),
 				choices = translator.translate_choices([ 'none' ] + facefusion.choices.face_selector_genders),
-				value = translator.translate_choice(state_manager.get_item('face_selector_gender') or 'none')
+				value = translator.translate_choice(state_manager.get_item('face_selector_gender') or 'none'),
+				info = tip('face_selector_gender')
 			)
 			FACE_SELECTOR_RACE_DROPDOWN = gradio.Dropdown(
 				label = translator.get('uis.face_selector_race_dropdown'),
 				choices = translator.translate_choices([ 'none' ] + facefusion.choices.face_selector_races),
-				value = translator.translate_choice(state_manager.get_item('face_selector_race') or 'none')
+				value = translator.translate_choice(state_manager.get_item('face_selector_race') or 'none'),
+				info = tip('face_selector_race')
 			)
 		with gradio.Row():
 			face_selector_age_start = state_manager.get_item('face_selector_age_start') or facefusion.choices.face_selector_age_range[0]
@@ -82,7 +87,8 @@ def render() -> None:
 				minimum = facefusion.choices.face_selector_age_range[0],
 				maximum = facefusion.choices.face_selector_age_range[-1],
 				value = (face_selector_age_start, face_selector_age_end),
-				step = calculate_int_step(facefusion.choices.face_selector_age_range)
+				step = calculate_int_step(facefusion.choices.face_selector_age_range),
+				info = tip('face_selector_age_range')
 			)
 	REFERENCE_FACE_DISTANCE_SLIDER = gradio.Slider(
 		label = translator.get('uis.reference_face_distance_slider'),
@@ -90,7 +96,8 @@ def render() -> None:
 		step = calculate_float_step(facefusion.choices.reference_face_distance_range),
 		minimum = facefusion.choices.reference_face_distance_range[0],
 		maximum = facefusion.choices.reference_face_distance_range[-1],
-		visible = 'reference' in state_manager.get_item('face_selector_mode')
+		visible = 'reference' in state_manager.get_item('face_selector_mode'),
+		info = tip('reference_face_distance')
 	)
 	register_ui_component('face_selector_mode_dropdown', FACE_SELECTOR_MODE_DROPDOWN)
 	register_ui_component('face_selector_order_dropdown', FACE_SELECTOR_ORDER_DROPDOWN)
