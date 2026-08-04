@@ -83,6 +83,7 @@ def pre_stop() -> Tuple[gradio.File, gradio.Image, gradio.Button, gradio.Button]
 
 
 def start(webcam_device_id : int, webcam_mode : WebcamMode, webcam_resolution : str, webcam_fps : Fps) -> Iterator[VisionFrame]:
+	webcam_mode = translator.untranslate_choice(webcam_mode)
 	state_manager.init_item('face_selector_mode', 'one')
 	state_manager.sync_state()
 

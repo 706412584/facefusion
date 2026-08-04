@@ -34,8 +34,8 @@ def render() -> None:
 	with gradio.Row():
 		FACE_DETECTOR_MODEL_DROPDOWN = gradio.Dropdown(
 			label = translator.get('uis.face_detector_model_dropdown'),
-			choices = facefusion.choices.face_detector_models,
-			value = state_manager.get_item('face_detector_model')
+			choices = translator.translate_choices(facefusion.choices.face_detector_models),
+			value = translator.translate_choice(state_manager.get_item('face_detector_model'))
 		)
 		FACE_DETECTOR_SIZE_DROPDOWN = gradio.Dropdown(**face_detector_size_dropdown_options)
 	FACE_DETECTOR_MARGIN_SLIDER = gradio.Slider(
@@ -73,13 +73,14 @@ def listen() -> None:
 
 
 def update_face_detector_model(face_detector_model : FaceDetectorModel) -> Tuple[gradio.Dropdown, gradio.Dropdown]:
+	face_detector_model = translator.untranslate_choice(face_detector_model)
 	face_detector.clear_inference_pool()
 	state_manager.set_item('face_detector_model', face_detector_model)
 
 	if face_detector.pre_check():
 		face_detector_size_choices = facefusion.choices.face_detector_set.get(state_manager.get_item('face_detector_model'))
 		state_manager.set_item('face_detector_size', get_last(face_detector_size_choices))
-		return gradio.Dropdown(value = state_manager.get_item('face_detector_model')), gradio.Dropdown(value = state_manager.get_item('face_detector_size'), choices = face_detector_size_choices)
+		return gradio.Dropdown(value = translator.translate_choice(state_manager.get_item('face_detector_model'))), gradio.Dropdown(value = state_manager.get_item('face_detector_size'), choices = face_detector_size_choices)
 	return gradio.Dropdown(), gradio.Dropdown()
 
 

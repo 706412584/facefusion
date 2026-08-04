@@ -18,12 +18,14 @@ def render() -> None:
 	global OUTPUT_VIDEO
 
 	if not state_manager.get_item('output_path'):
-		documents_directory = Path.home().joinpath('Documents')
-
-		if documents_directory.exists():
-			state_manager.set_item('output_path', documents_directory)
-		else:
-			state_manager.set_item('output_path', tempfile.gettempdir())
+		# 使用项目根目录下的 out 文件夹作为默认输出目录
+		project_out_directory = Path(__file__).resolve().parent.parent.parent.joinpath('out')
+		
+		# 如果 out 文件夹不存在，创建它
+		if not project_out_directory.exists():
+			project_out_directory.mkdir(parents=True, exist_ok=True)
+		
+		state_manager.set_item('output_path', project_out_directory)
 	OUTPUT_PATH_TEXTBOX = gradio.Textbox(
 		label = translator.get('uis.output_path_textbox'),
 		value = state_manager.get_item('output_path'),

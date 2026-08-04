@@ -587,6 +587,7 @@ def pre_process(mode : ProcessMode) -> bool:
 def post_process() -> None:
 	read_static_image.cache_clear()
 	read_static_video_frame.cache_clear()
+	resolve_average_source_face.cache_clear()
 	video_manager.clear_video_pool()
 
 	if state_manager.get_item('video_memory_strategy') in [ 'strict', 'moderate' ]:
@@ -773,6 +774,14 @@ def extract_source_face(source_vision_frames : List[VisionFrame]) -> Optional[Fa
 	return average_face_identity(source_faces)
 
 
+@lru_cache(maxsize = 4)
+def resolve_average_source_face(source_paths : Tuple[str, ...]) -> Optional[Face]:
+	# 源人脸在整个处理过程中不变，按源路径缓存平均人脸，避免对视频每一帧都重复做人脸检测/识别/求平均
+	source_image_paths = filter_image_paths(list(source_paths))
+	source_vision_frames = read_static_images(source_image_paths)
+	return extract_source_face(source_vision_frames)
+
+
 def process_frame(inputs : FaceSwapperInputs) -> ProcessorOutputs:
 	reference_vision_frame = inputs.get('reference_vision_frame')
 	source_vision_frames = inputs.get('source_vision_frames')
@@ -781,7 +790,8 @@ def process_frame(inputs : FaceSwapperInputs) -> ProcessorOutputs:
 	temp_vision_mask = inputs.get('temp_vision_mask')
 
 	target_vision_frame = get_middle(target_vision_frames)
-	source_face = extract_source_face(source_vision_frames)
+	source_paths = state_manager.get_item('source_paths')
+	source_face = resolve_average_source_face(tuple(source_paths)) if source_paths else extract_source_face(source_vision_frames)
 	target_faces = select_faces(reference_vision_frame, source_vision_frames, target_vision_frames)
 
 	if source_face and target_faces:

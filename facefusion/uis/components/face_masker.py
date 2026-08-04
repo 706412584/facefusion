@@ -41,28 +41,28 @@ def render() -> None:
 	with gradio.Row():
 		FACE_OCCLUDER_MODEL_DROPDOWN = gradio.Dropdown(
 			label = translator.get('uis.face_occluder_model_dropdown'),
-			choices = facefusion.choices.face_occluder_models,
-			value = state_manager.get_item('face_occluder_model')
+			choices = translator.translate_choices(facefusion.choices.face_occluder_models),
+			value = translator.translate_choice(state_manager.get_item('face_occluder_model'))
 		)
 		FACE_PARSER_MODEL_DROPDOWN = gradio.Dropdown(
 			label = translator.get('uis.face_parser_model_dropdown'),
-			choices = facefusion.choices.face_parser_models,
-			value = state_manager.get_item('face_parser_model')
+			choices = translator.translate_choices(facefusion.choices.face_parser_models),
+			value = translator.translate_choice(state_manager.get_item('face_parser_model'))
 		)
 	FACE_MASK_TYPES_CHECKBOX_GROUP = gradio.CheckboxGroup(
 		label = translator.get('uis.face_mask_types_checkbox_group'),
-		choices = facefusion.choices.face_mask_types,
+		choices = translator.translate_choices(facefusion.choices.face_mask_types),
 		value = state_manager.get_item('face_mask_types')
 	)
 	FACE_MASK_AREAS_CHECKBOX_GROUP = gradio.CheckboxGroup(
 		label = translator.get('uis.face_mask_areas_checkbox_group'),
-		choices = facefusion.choices.face_mask_areas,
+		choices = translator.translate_choices(facefusion.choices.face_mask_areas),
 		value = state_manager.get_item('face_mask_areas'),
 		visible = has_area_mask
 	)
 	FACE_MASK_REGIONS_CHECKBOX_GROUP = gradio.CheckboxGroup(
 		label = translator.get('uis.face_mask_regions_checkbox_group'),
-		choices = facefusion.choices.face_mask_regions,
+		choices = translator.translate_choices(facefusion.choices.face_mask_regions),
 		value = state_manager.get_item('face_mask_regions'),
 		visible = has_region_mask
 	)
@@ -131,25 +131,27 @@ def listen() -> None:
 
 
 def update_face_occluder_model(face_occluder_model : FaceOccluderModel) -> gradio.Dropdown:
+	face_occluder_model = translator.untranslate_choice(face_occluder_model)
 	face_masker.clear_inference_pool()
 	state_manager.set_item('face_occluder_model', face_occluder_model)
 
 	if face_masker.pre_check():
-		return gradio.Dropdown(value = state_manager.get_item('face_occluder_model'))
+		return gradio.Dropdown(value = translator.translate_choice(state_manager.get_item('face_occluder_model')))
 	return gradio.Dropdown()
 
 
 def update_face_parser_model(face_parser_model : FaceParserModel) -> gradio.Dropdown:
+	face_parser_model = translator.untranslate_choice(face_parser_model)
 	face_masker.clear_inference_pool()
 	state_manager.set_item('face_parser_model', face_parser_model)
 
 	if face_masker.pre_check():
-		return gradio.Dropdown(value = state_manager.get_item('face_parser_model'))
+		return gradio.Dropdown(value = translator.translate_choice(state_manager.get_item('face_parser_model')))
 	return gradio.Dropdown()
 
 
 def update_face_mask_types(face_mask_types : List[FaceMaskType]) -> Tuple[gradio.CheckboxGroup, gradio.CheckboxGroup, gradio.CheckboxGroup, gradio.Slider, gradio.Group]:
-	face_mask_types = face_mask_types or facefusion.choices.face_mask_types
+	face_mask_types = translator.untranslate_choices(face_mask_types or facefusion.choices.face_mask_types)
 	state_manager.set_item('face_mask_types', face_mask_types)
 	has_box_mask = 'box' in face_mask_types
 	has_area_mask = 'area' in face_mask_types
@@ -158,13 +160,13 @@ def update_face_mask_types(face_mask_types : List[FaceMaskType]) -> Tuple[gradio
 
 
 def update_face_mask_areas(face_mask_areas : List[FaceMaskArea]) -> gradio.CheckboxGroup:
-	face_mask_areas = face_mask_areas or facefusion.choices.face_mask_areas
+	face_mask_areas = translator.untranslate_choices(face_mask_areas or facefusion.choices.face_mask_areas)
 	state_manager.set_item('face_mask_areas', face_mask_areas)
 	return gradio.CheckboxGroup(value = state_manager.get_item('face_mask_areas'))
 
 
 def update_face_mask_regions(face_mask_regions : List[FaceMaskRegion]) -> gradio.CheckboxGroup:
-	face_mask_regions = face_mask_regions or facefusion.choices.face_mask_regions
+	face_mask_regions = translator.untranslate_choices(face_mask_regions or facefusion.choices.face_mask_regions)
 	state_manager.set_item('face_mask_regions', face_mask_regions)
 	return gradio.CheckboxGroup(value = state_manager.get_item('face_mask_regions'))
 

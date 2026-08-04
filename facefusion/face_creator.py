@@ -90,11 +90,46 @@ def get_many_faces(vision_frames : List[VisionFrame]) -> List[Face]:
 
 			if all_bounding_boxes and all_face_scores and all_face_landmarks_5 and state_manager.get_item('face_detector_score') > 0:
 				faces = create_faces(vision_frame, all_bounding_boxes, all_face_scores, all_face_landmarks_5)
+				faces = deduplicate_faces(faces)
 
 				if faces:
 					many_faces.extend(faces)
 
 	return many_faces
+
+
+
+def deduplicate_faces(faces : List[Face]) -> List[Face]:
+	# 多角度检测时，同一张脸（尤其大角度仰头/侧脸）常被不同角度重复检测出多个框，
+	# 这些框的 IoU 可能不够大而躲过 NMS，导致同一张脸被换两次（"两个脸重合"）。
+	# 这里按人脸中心距离再做一次合并：中心足够接近就视为同一张脸，保留检测分数更高的那个。
+	if len(faces) < 2:
+		return faces
+
+	sorted_faces = sorted(faces, key = lambda face : face.score_set.get('detector'), reverse = True)
+	kept_faces : List[Face] = []
+
+	for face in sorted_faces:
+		start_x, start_y, end_x, end_y = face.bounding_box
+		face_center = numpy.array([ (start_x + end_x) / 2, (start_y + end_y) / 2 ])
+		face_size = max(end_x - start_x, end_y - start_y)
+		is_duplicate = False
+
+		for kept_face in kept_faces:
+			kept_start_x, kept_start_y, kept_end_x, kept_end_y = kept_face.bounding_box
+			kept_center = numpy.array([ (kept_start_x + kept_end_x) / 2, (kept_start_y + kept_end_y) / 2 ])
+			kept_size = max(kept_end_x - kept_start_x, kept_end_y - kept_start_y)
+			center_distance = numpy.linalg.norm(face_center - kept_center)
+
+			# 中心距离小于较小那张脸尺寸的 45% 即判定为同一张脸
+			if center_distance < min(face_size, kept_size) * 0.45:
+				is_duplicate = True
+				break
+
+		if not is_duplicate:
+			kept_faces.append(face)
+
+	return kept_faces
 
 
 def get_static_faces(vision_frames : List[VisionFrame]) -> List[Face]:

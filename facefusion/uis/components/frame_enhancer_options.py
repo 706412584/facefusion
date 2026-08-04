@@ -20,8 +20,8 @@ def render() -> None:
 	has_frame_enhancer = 'frame_enhancer' in state_manager.get_item('processors')
 	FRAME_ENHANCER_MODEL_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.model_dropdown', 'facefusion.processors.modules.frame_enhancer'),
-		choices = frame_enhancer_choices.frame_enhancer_models,
-		value = state_manager.get_item('frame_enhancer_model'),
+		choices = translator.translate_choices(frame_enhancer_choices.frame_enhancer_models),
+		value = translator.translate_choice(state_manager.get_item('frame_enhancer_model')),
 		visible = has_frame_enhancer
 	)
 	FRAME_ENHANCER_BLEND_SLIDER = gradio.Slider(
@@ -51,12 +51,13 @@ def remote_update(processors : List[str]) -> Tuple[gradio.Dropdown, gradio.Slide
 
 
 def update_frame_enhancer_model(frame_enhancer_model : FrameEnhancerModel) -> gradio.Dropdown:
+	frame_enhancer_model = translator.untranslate_choice(frame_enhancer_model)
 	frame_enhancer_module = load_processor_module('frame_enhancer')
 	frame_enhancer_module.clear_inference_pool()
 	state_manager.set_item('frame_enhancer_model', frame_enhancer_model)
 
 	if frame_enhancer_module.pre_check():
-		return gradio.Dropdown(value = state_manager.get_item('frame_enhancer_model'))
+		return gradio.Dropdown(value = translator.translate_choice(state_manager.get_item('frame_enhancer_model')))
 	return gradio.Dropdown()
 
 

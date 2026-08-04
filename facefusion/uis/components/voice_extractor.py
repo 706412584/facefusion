@@ -17,8 +17,8 @@ def render() -> None:
 	has_lip_syncer = 'lip_syncer' in state_manager.get_item('processors')
 	VOICE_EXTRACTOR_MODEL_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.voice_extractor_model_dropdown'),
-		choices = facefusion.choices.voice_extractor_models,
-		value = state_manager.get_item('voice_extractor_model'),
+		choices = translator.translate_choices(facefusion.choices.voice_extractor_models),
+		value = translator.translate_choice(state_manager.get_item('voice_extractor_model')),
 		visible = is_video(state_manager.get_item('target_path')) and has_lip_syncer
 	)
 	register_ui_component('voice_extractor_model_dropdown', VOICE_EXTRACTOR_MODEL_DROPDOWN)
@@ -48,9 +48,10 @@ def remote_update(processors : List[str]) -> gradio.Dropdown:
 
 
 def update_voice_extractor_model(voice_extractor_model : VoiceExtractorModel) -> gradio.Dropdown:
+	voice_extractor_model = translator.untranslate_choice(voice_extractor_model)
 	voice_extractor.clear_inference_pool()
 	state_manager.set_item('voice_extractor_model', voice_extractor_model)
 
 	if voice_extractor.pre_check():
-		gradio.Dropdown(value = state_manager.get_item('voice_extractor_model'))
+		gradio.Dropdown(value = translator.translate_choice(state_manager.get_item('voice_extractor_model')))
 	return gradio.Dropdown()

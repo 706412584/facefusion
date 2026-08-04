@@ -81,8 +81,10 @@ def init() -> None:
 
 
 def launch() -> None:
+	from facefusion.uis.components.theme_switcher import THEME_LOAD_JS
+
 	ui_layouts_total = len(state_manager.get_item('ui_layouts'))
-	with gradio.Blocks(theme = get_theme(), css = get_css(), title = metadata.get('name') + ' ' + metadata.get('version'), fill_width = True) as ui:
+	with gradio.Blocks(theme = get_theme(), css = get_css(), js = THEME_LOAD_JS, title = metadata.get('name') + ' ' + metadata.get('version'), fill_width = True) as ui:
 		for ui_layout in state_manager.get_item('ui_layouts'):
 			ui_layout_module = load_ui_layout_module(ui_layout)
 
@@ -197,4 +199,5 @@ def get_theme() -> gradio.Theme:
 
 def get_css() -> str:
 	overrides_css_path = resolve_relative_path('uis/assets/overrides.css')
-	return open(overrides_css_path).read()
+	with open(overrides_css_path, encoding = 'utf-8') as overrides_css_file:
+		return overrides_css_file.read()

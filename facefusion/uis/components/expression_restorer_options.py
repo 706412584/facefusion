@@ -22,8 +22,8 @@ def render() -> None:
 	has_expression_restorer = 'expression_restorer' in state_manager.get_item('processors')
 	EXPRESSION_RESTORER_MODEL_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.model_dropdown', 'facefusion.processors.modules.expression_restorer'),
-		choices = expression_restorer_choices.expression_restorer_models,
-		value = state_manager.get_item('expression_restorer_model'),
+		choices = translator.translate_choices(expression_restorer_choices.expression_restorer_models),
+		value = translator.translate_choice(state_manager.get_item('expression_restorer_model')),
 		visible = has_expression_restorer
 	)
 	EXPRESSION_RESTORER_FACTOR_SLIDER = gradio.Slider(
@@ -36,7 +36,7 @@ def render() -> None:
 	)
 	EXPRESSION_RESTORER_AREAS_CHECKBOX_GROUP = gradio.CheckboxGroup(
 		label = translator.get('uis.areas_checkbox_group', 'facefusion.processors.modules.expression_restorer'),
-		choices = expression_restorer_choices.expression_restorer_areas,
+		choices = translator.translate_choices(expression_restorer_choices.expression_restorer_areas),
 		value = state_manager.get_item('expression_restorer_areas'),
 		visible = has_expression_restorer
 	)
@@ -61,12 +61,13 @@ def remote_update(processors : List[str]) -> Tuple[gradio.Dropdown, gradio.Slide
 
 
 def update_expression_restorer_model(expression_restorer_model : ExpressionRestorerModel) -> gradio.Dropdown:
+	expression_restorer_model = translator.untranslate_choice(expression_restorer_model)
 	expression_restorer_module = load_processor_module('expression_restorer')
 	expression_restorer_module.clear_inference_pool()
 	state_manager.set_item('expression_restorer_model', expression_restorer_model)
 
 	if expression_restorer_module.pre_check():
-		return gradio.Dropdown(value = state_manager.get_item('expression_restorer_model'))
+		return gradio.Dropdown(value = translator.translate_choice(state_manager.get_item('expression_restorer_model')))
 	return gradio.Dropdown()
 
 
@@ -75,6 +76,6 @@ def update_expression_restorer_factor(expression_restorer_factor : float) -> Non
 
 
 def update_expression_restorer_areas(expression_restorer_areas : List[ExpressionRestorerArea]) -> gradio.CheckboxGroup:
-	expression_restorer_areas = expression_restorer_areas or expression_restorer_choices.expression_restorer_areas
+	expression_restorer_areas = translator.untranslate_choices(expression_restorer_areas or expression_restorer_choices.expression_restorer_areas)
 	state_manager.set_item('expression_restorer_areas', expression_restorer_areas)
 	return gradio.CheckboxGroup(value = state_manager.get_item('expression_restorer_areas'))

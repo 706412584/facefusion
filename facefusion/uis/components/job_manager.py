@@ -1,3 +1,5 @@
+import os
+from copy import deepcopy
 from typing import List, Optional, Tuple
 
 import gradio
@@ -36,8 +38,8 @@ def render() -> None:
 		with gradio.Column(visible = is_job_manager) as JOB_MANAGER_WRAPPER:
 			JOB_MANAGER_JOB_ACTION_DROPDOWN = gradio.Dropdown(
 				label = translator.get('uis.job_manager_job_action_dropdown'),
-				choices = uis_choices.job_manager_actions,
-				value = get_first(uis_choices.job_manager_actions)
+				choices = translator.translate_choices(uis_choices.job_manager_actions),
+				value = translator.translate_choice(get_first(uis_choices.job_manager_actions))
 			)
 			JOB_MANAGER_JOB_ID_TEXTBOX = gradio.Textbox(
 				label = translator.get('uis.job_manager_job_id_dropdown'),
@@ -76,11 +78,13 @@ def listen() -> None:
 
 
 def remote_update(ui_workflow : UiWorkflow) -> Tuple[gradio.Row, gradio.Dropdown, gradio.Textbox, gradio.Dropdown, gradio.Dropdown]:
+	ui_workflow = translator.untranslate_choice(ui_workflow)
 	is_job_manager = ui_workflow == 'job_manager'
-	return gradio.Row(visible = is_job_manager), gradio.Dropdown(value = get_first(uis_choices.job_manager_actions)), gradio.Textbox(value = None, visible = True), gradio.Dropdown(visible = False), gradio.Dropdown(visible = False)
+	return gradio.Row(visible = is_job_manager), gradio.Dropdown(value = translator.translate_choice(get_first(uis_choices.job_manager_actions)), choices = translator.translate_choices(uis_choices.job_manager_actions)), gradio.Textbox(value = None, visible = True), gradio.Dropdown(visible = False), gradio.Dropdown(visible = False)
 
 
 def apply(job_action : JobManagerAction, created_job_id : str, selected_job_id : str, selected_step_index : int) -> Tuple[gradio.Dropdown, gradio.Textbox, gradio.Dropdown, gradio.Dropdown]:
+	job_action = translator.untranslate_choice(job_action)
 	created_job_id = convert_str_none(created_job_id)
 	selected_job_id = convert_str_none(selected_job_id)
 	selected_step_index = convert_int_none(selected_step_index)
@@ -118,7 +122,7 @@ def apply(job_action : JobManagerAction, created_job_id : str, selected_job_id :
 			logger.error(translator.get('job_not_deleted').format(job_id = selected_job_id), __name__)
 
 	if job_action == 'job-add-step':
-		if selected_job_id and job_manager.add_step(selected_job_id, step_args):
+		if selected_job_id and add_steps(selected_job_id, step_args):
 			state_manager.set_item('output_path', output_path)
 			logger.info(translator.get('job_step_added').format(job_id = selected_job_id), __name__)
 			return gradio.Dropdown(), gradio.Textbox(), gradio.Dropdown(visible = True), gradio.Dropdown(visible = False)
@@ -164,7 +168,36 @@ def get_step_choices(job_id : str) -> List[int]:
 	return [ index for index, _ in enumerate(steps) ]
 
 
+def add_steps(job_id : str, step_args : dict) -> bool:
+	target_paths = state_manager.get_item('target_paths') or ([ state_manager.get_item('target_path') ] if state_manager.get_item('target_path') else [])
+
+	if len(target_paths) <= 1:
+		return job_manager.add_step(job_id, step_args)
+
+	for index, target_path in enumerate(target_paths):
+		step_args_item = deepcopy(step_args)
+		step_args_item['target_path'] = target_path
+		step_args_item['output_path'] = suggest_batch_output_path(step_args.get('output_path'), target_path, index)
+
+		if not step_args_item.get('output_path'):
+			return False
+		if not job_manager.add_step(job_id, step_args_item):
+			return False
+	return True
+
+
+def suggest_batch_output_path(output_path : str, target_path : str, index : int) -> Optional[str]:
+	output_seed = '{0}:{1}:{2}'.format(target_path, index, str(state_manager.get_state()))
+
+	if is_directory(output_path):
+		return suggest_output_path(output_path, target_path, output_seed)
+
+	output_directory_path = os.path.dirname(output_path) or '.'
+	return suggest_output_path(output_directory_path, target_path, output_seed)
+
+
 def update(job_action : JobManagerAction, selected_job_id : str) -> Tuple[gradio.Textbox, gradio.Dropdown, gradio.Dropdown]:
+	job_action = translator.untranslate_choice(job_action)
 	if job_action == 'job-create':
 		return gradio.Textbox(value = None, visible = True), gradio.Dropdown(visible = False), gradio.Dropdown(visible = False)
 

@@ -20,8 +20,8 @@ def render() -> None:
 	has_deep_swapper = 'deep_swapper' in state_manager.get_item('processors')
 	DEEP_SWAPPER_MODEL_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.model_dropdown', 'facefusion.processors.modules.deep_swapper'),
-		choices = deep_swapper_choices.deep_swapper_models,
-		value = state_manager.get_item('deep_swapper_model'),
+		choices = translator.translate_choices(deep_swapper_choices.deep_swapper_models),
+		value = translator.translate_choice(state_manager.get_item('deep_swapper_model')),
 		visible = has_deep_swapper
 	)
 	DEEP_SWAPPER_MORPH_SLIDER = gradio.Slider(
@@ -51,12 +51,13 @@ def remote_update(processors : List[str]) -> Tuple[gradio.Dropdown, gradio.Slide
 
 
 def update_deep_swapper_model(deep_swapper_model : DeepSwapperModel) -> Tuple[gradio.Dropdown, gradio.Slider]:
+	deep_swapper_model = translator.untranslate_choice(deep_swapper_model)
 	deep_swapper_module = load_processor_module('deep_swapper')
 	deep_swapper_module.clear_inference_pool()
 	state_manager.set_item('deep_swapper_model', deep_swapper_model)
 
 	if deep_swapper_module.pre_check():
-		return gradio.Dropdown(value = state_manager.get_item('deep_swapper_model')), gradio.Slider(visible = deep_swapper_module.has_morph_input())
+		return gradio.Dropdown(value = translator.translate_choice(state_manager.get_item('deep_swapper_model'))), gradio.Slider(visible = deep_swapper_module.has_morph_input())
 	return gradio.Dropdown(), gradio.Slider()
 
 

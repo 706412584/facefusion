@@ -1,5 +1,7 @@
+import os
+from copy import deepcopy
 from time import sleep
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import gradio
 
@@ -61,6 +63,7 @@ def listen() -> None:
 
 
 def remote_update(ui_workflow : UiWorkflow) -> gradio.Row:
+	ui_workflow = translator.untranslate_choice(ui_workflow)
 	is_instant_runner = ui_workflow == 'instant_runner'
 
 	return gradio.Row(visible = is_instant_runner)
@@ -75,11 +78,15 @@ def start() -> Tuple[gradio.Button, gradio.Button]:
 def run() -> Tuple[gradio.Button, gradio.Button, gradio.Image, gradio.Video]:
 	step_args = collect_step_args()
 	output_path = step_args.get('output_path')
+	target_paths = state_manager.get_item('target_paths') or ([ state_manager.get_item('target_path') ] if state_manager.get_item('target_path') else [])
 
-	if is_directory(step_args.get('output_path')):
+	if len(target_paths) <= 1 and is_directory(step_args.get('output_path')):
 		step_args['output_path'] = suggest_output_path(step_args.get('output_path'), state_manager.get_item('target_path'))
 	if job_manager.init_jobs(state_manager.get_item('jobs_path')):
-		create_and_run_job(step_args)
+		if len(target_paths) > 1:
+			create_and_run_batch_job(step_args, target_paths)
+		else:
+			create_and_run_job(step_args)
 		state_manager.set_item('output_path', output_path)
 	if is_image(step_args.get('output_path')):
 		return gradio.Button(visible = True), gradio.Button(visible = False), gradio.Image(value = step_args.get('output_path'), visible = True), gradio.Video(value = None, visible = False)
@@ -95,6 +102,38 @@ def create_and_run_job(step_args : Args) -> bool:
 		state_manager.sync_item(key) #type:ignore[arg-type]
 
 	return job_manager.create_job(job_id) and job_manager.add_step(job_id, step_args) and job_manager.submit_job(job_id) and job_runner.run_job(job_id, process_step)
+
+
+def create_and_run_batch_job(step_args : Args, target_paths : List[str]) -> bool:
+	job_id = job_helper.suggest_job_id('ui-batch')
+	output_path = step_args.get('output_path')
+
+	for key in job_store.get_job_keys():
+		state_manager.sync_item(key) #type:ignore[arg-type]
+
+	if not job_manager.create_job(job_id):
+		return False
+
+	for index, target_path in enumerate(target_paths):
+		step_args_item = deepcopy(step_args)
+		step_args_item['target_path'] = target_path
+		step_args_item['output_path'] = suggest_batch_output_path(output_path, target_path, index)
+
+		if not step_args_item.get('output_path'):
+			return False
+		if not job_manager.add_step(job_id, step_args_item):
+			return False
+	return job_manager.submit_job(job_id) and job_runner.run_job(job_id, process_step)
+
+
+def suggest_batch_output_path(output_path : str, target_path : str, index : int) -> Optional[str]:
+	output_seed = '{0}:{1}:{2}'.format(target_path, index, str(state_manager.get_state()))
+
+	if is_directory(output_path):
+		return suggest_output_path(output_path, target_path, output_seed)
+
+	output_directory_path = os.path.dirname(output_path) or '.'
+	return suggest_output_path(output_directory_path, target_path, output_seed)
 
 
 def stop() -> Tuple[gradio.Button, gradio.Button, gradio.Image, gradio.Video]:

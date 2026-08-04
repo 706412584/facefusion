@@ -22,8 +22,8 @@ def render() -> None:
 	has_face_swapper = 'face_swapper' in state_manager.get_item('processors')
 	FACE_SWAPPER_MODEL_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.model_dropdown', 'facefusion.processors.modules.face_swapper'),
-		choices = face_swapper_choices.face_swapper_models,
-		value = state_manager.get_item('face_swapper_model'),
+		choices = translator.translate_choices(face_swapper_choices.face_swapper_models),
+		value = translator.translate_choice(state_manager.get_item('face_swapper_model')),
 		visible = has_face_swapper
 	)
 	FACE_SWAPPER_PIXEL_BOOST_DROPDOWN = gradio.Dropdown(
@@ -61,6 +61,7 @@ def remote_update(processors : List[str]) -> Tuple[gradio.Dropdown, gradio.Dropd
 
 
 def update_face_swapper_model(face_swapper_model : FaceSwapperModel) -> Tuple[gradio.Dropdown, gradio.Dropdown, gradio.Slider]:
+	face_swapper_model = translator.untranslate_choice(face_swapper_model)
 	face_swapper_module = load_processor_module('face_swapper')
 	face_swapper_module.clear_inference_pool()
 	state_manager.set_item('face_swapper_model', face_swapper_model)
@@ -68,7 +69,7 @@ def update_face_swapper_model(face_swapper_model : FaceSwapperModel) -> Tuple[gr
 	if face_swapper_module.pre_check():
 		face_swapper_pixel_boost_dropdown_choices = face_swapper_choices.face_swapper_set.get(state_manager.get_item('face_swapper_model'))
 		state_manager.set_item('face_swapper_pixel_boost', get_first(face_swapper_pixel_boost_dropdown_choices))
-		return gradio.Dropdown(value = state_manager.get_item('face_swapper_model')), gradio.Dropdown(value = state_manager.get_item('face_swapper_pixel_boost'), choices = face_swapper_pixel_boost_dropdown_choices), gradio.Slider(visible = has_face_swapper_weight())
+		return gradio.Dropdown(value = translator.translate_choice(state_manager.get_item('face_swapper_model'))), gradio.Dropdown(value = state_manager.get_item('face_swapper_pixel_boost'), choices = face_swapper_pixel_boost_dropdown_choices), gradio.Slider(visible = has_face_swapper_weight())
 	return gradio.Dropdown(), gradio.Dropdown(), gradio.Slider()
 
 

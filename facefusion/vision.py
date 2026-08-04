@@ -357,6 +357,8 @@ def merge_tile_frames(tile_vision_frames : List[VisionFrame], temp_width : int, 
 
 
 def extract_vision_mask(vision_frame : VisionFrame) -> Mask:
+	if vision_frame is None:
+		return None
 	if vision_frame.ndim == 3 and vision_frame.shape[2] == 4:
 		return vision_frame[:, :, 3]
 	return numpy.full(vision_frame.shape[:2], 255, dtype = numpy.uint8)

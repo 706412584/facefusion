@@ -41,8 +41,8 @@ def render() -> None:
 	background_remover_despill_color = state_manager.get_item('background_remover_despill_color')
 	BACKGROUND_REMOVER_MODEL_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.model_dropdown', 'facefusion.processors.modules.background_remover'),
-		choices = background_remover_choices.background_remover_models,
-		value = state_manager.get_item('background_remover_model'),
+		choices = translator.translate_choices(background_remover_choices.background_remover_models),
+		value = translator.translate_choice(state_manager.get_item('background_remover_model')),
 		visible = has_background_remover
 	)
 	with gradio.Group(visible = has_background_remover) as BACKGROUND_REMOVER_FILL_COLOR_WRAPPER:
@@ -140,12 +140,13 @@ def remote_update(processors : List[str]) -> Tuple[gradio.Dropdown, gradio.Group
 
 
 def update_background_remover_model(background_remover_model : BackgroundRemoverModel) -> gradio.Dropdown:
+	background_remover_model = translator.untranslate_choice(background_remover_model)
 	background_remover_module = load_processor_module('background_remover')
 	background_remover_module.clear_inference_pool()
 	state_manager.set_item('background_remover_model', background_remover_model)
 
 	if background_remover_module.pre_check():
-		return gradio.Dropdown(value = state_manager.get_item('background_remover_model'))
+		return gradio.Dropdown(value = translator.translate_choice(state_manager.get_item('background_remover_model')))
 	return gradio.Dropdown()
 
 

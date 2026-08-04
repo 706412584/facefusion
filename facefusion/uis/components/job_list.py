@@ -42,6 +42,7 @@ def listen() -> None:
 
 
 def update_job_dataframe(job_statuses : List[JobStatus]) -> gradio.Dataframe:
+	job_statuses = translator.untranslate_choices(job_statuses or facefusion.choices.job_statuses)
 	all_job_contents = []
 
 	for job_status in job_statuses:

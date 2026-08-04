@@ -20,8 +20,8 @@ def render() -> None:
 
 		JOB_LIST_JOB_STATUS_CHECKBOX_GROUP = gradio.CheckboxGroup(
 			label = translator.get('uis.job_list_status_checkbox_group'),
-			choices = facefusion.choices.job_statuses,
-			value = job_status
+			choices = translator.translate_choices(facefusion.choices.job_statuses),
+			value = translator.translate_choice(job_status)
 		)
 		register_ui_component('job_list_job_status_checkbox_group', JOB_LIST_JOB_STATUS_CHECKBOX_GROUP)
 
@@ -31,5 +31,5 @@ def listen() -> None:
 
 
 def update_job_status_checkbox_group(job_statuses : List[JobStatus]) -> gradio.CheckboxGroup:
-	job_statuses = job_statuses or facefusion.choices.job_statuses
+	job_statuses = translator.untranslate_choices(job_statuses or facefusion.choices.job_statuses)
 	return gradio.CheckboxGroup(value = job_statuses)

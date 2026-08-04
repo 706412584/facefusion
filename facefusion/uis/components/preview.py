@@ -1,5 +1,5 @@
 from time import sleep
-from typing import List, Optional, Tuple
+from typing import Generator, List, Optional, Tuple
 
 import cv2
 import gradio
@@ -18,9 +18,10 @@ from facefusion.types import AudioFrame, Face, Mask, VisionFrame
 from facefusion.uis import choices as uis_choices
 from facefusion.uis.core import get_ui_component, get_ui_components, register_ui_component
 from facefusion.uis.types import ComponentOptions, PreviewMode
-from facefusion.vision import detect_frame_orientation, extract_vision_mask, fit_cover_frame, is_vision_frame, merge_vision_mask, obscure_frame, read_static_image, read_static_images, read_video_frame, restrict_frame, select_video_frames, unpack_resolution
+from facefusion.vision import count_video_frame_total, detect_frame_orientation, extract_vision_mask, fit_cover_frame, is_vision_frame, merge_vision_mask, obscure_frame, read_static_image, read_static_images, read_video_frame, restrict_frame, select_video_frames, unpack_resolution
 
 PREVIEW_IMAGE : Optional[gradio.Image] = None
+PREVIEW_PLAYING : bool = False
 
 
 def render() -> None:
@@ -71,7 +72,7 @@ def listen() -> None:
 		preview_resolution_dropdown.change(update_preview_image, inputs = [ preview_mode_dropdown, preview_resolution_dropdown, preview_frame_slider ], outputs = PREVIEW_IMAGE)
 
 	if preview_frame_slider:
-		preview_frame_slider.release(update_preview_image, inputs = [ preview_mode_dropdown, preview_resolution_dropdown, preview_frame_slider ], outputs = PREVIEW_IMAGE, show_progress = 'hidden')
+		preview_frame_slider.release(stop_preview_and_update, inputs = [ preview_mode_dropdown, preview_resolution_dropdown, preview_frame_slider ], outputs = PREVIEW_IMAGE, show_progress = 'hidden')
 		preview_frame_slider.change(update_preview_image, inputs = [ preview_mode_dropdown, preview_resolution_dropdown, preview_frame_slider ], outputs = PREVIEW_IMAGE, show_progress = 'hidden', trigger_mode = 'once')
 
 		reference_face_position_gallery = get_ui_component('reference_face_position_gallery')
@@ -181,7 +182,21 @@ def listen() -> None:
 		ui_component.release(clear_and_update_preview_image, inputs = [ preview_mode_dropdown, preview_resolution_dropdown, preview_frame_slider ], outputs = PREVIEW_IMAGE)
 
 
+	preview_play_button = get_ui_component('preview_play_button')
+	preview_speed_slider = get_ui_component('preview_speed_slider')
+	preview_stop_button = get_ui_component('preview_stop_button')
+	if preview_play_button and preview_frame_slider:
+		preview_play_button.click(
+			play_preview,
+			inputs = [ preview_mode_dropdown, preview_resolution_dropdown, preview_frame_slider, preview_speed_slider ],
+			outputs = [ PREVIEW_IMAGE, preview_frame_slider ]
+		)
+	if preview_stop_button:
+		preview_stop_button.click(stop_preview)
+
+
 def update_preview_image(preview_mode : PreviewMode, preview_resolution : str, frame_number : int = 0) -> gradio.Image:
+	preview_mode = translator.untranslate_choice(preview_mode)
 	while process_manager.is_checking():
 		sleep(0.5)
 
@@ -219,6 +234,21 @@ def clear_and_update_preview_image(preview_mode : PreviewMode, preview_resolutio
 	return update_preview_image(preview_mode, preview_resolution, frame_number)
 
 
+
+def stop_preview_and_update(preview_mode : PreviewMode, preview_resolution : str, frame_number : int = 0) -> gradio.Image:
+	global PREVIEW_PLAYING
+	if PREVIEW_PLAYING:
+		PREVIEW_PLAYING = False
+		logger.info('Preview playback stopped by slider change', __name__)
+	return update_preview_image(preview_mode, preview_resolution, frame_number)
+
+
+def stop_preview() -> None:
+	global PREVIEW_PLAYING
+	PREVIEW_PLAYING = False
+	logger.info('Preview playback stopped by stop button', __name__)
+
+
 def process_preview_frame(reference_vision_frame : VisionFrame, source_vision_frames : List[VisionFrame], source_audio_frame : AudioFrame, source_voice_frame : AudioFrame, target_vision_frames : List[VisionFrame], preview_mode : PreviewMode, preview_resolution : str) -> VisionFrame:
 	target_vision_frame = get_middle(target_vision_frames)
 	target_vision_frame = restrict_frame(target_vision_frame, unpack_resolution(preview_resolution))
@@ -227,19 +257,8 @@ def process_preview_frame(reference_vision_frame : VisionFrame, source_vision_fr
 	target_vision_frames = [ restrict_frame(vision_frame, unpack_resolution(preview_resolution))[:, :, :3] for vision_frame in target_vision_frames ]
 	temp_vision_frame = target_vision_frame.copy()
 
-	if analyse_frame(target_vision_frame[:, :, :3]):
-		if preview_mode == 'frame-by-frame':
-			temp_vision_frame = obscure_frame(temp_vision_frame[:, :, :3])
-			return numpy.hstack((temp_vision_frame, temp_vision_frame))
-
-		if preview_mode == 'face-by-face':
-			target_crop_vision_frame, output_crop_vision_frame = create_face_by_face(reference_vision_frame, source_vision_frames, target_vision_frame[:, :, :3], temp_vision_frame[:, :, :3])
-			target_crop_vision_frame = obscure_frame(target_crop_vision_frame)
-			output_crop_vision_frame = obscure_frame(output_crop_vision_frame)
-			return numpy.hstack((target_crop_vision_frame, output_crop_vision_frame))
-
-		temp_vision_frame = obscure_frame(temp_vision_frame)
-		return temp_vision_frame
+	# 跳过预览内容检测（本地定制）
+	# if analyse_frame(...): obscure preview frames
 
 	for processor_module in get_processors_modules(state_manager.get_item('processors')):
 		logger.disable()
@@ -304,3 +323,39 @@ def prepare_output_frame(target_vision_frame : VisionFrame, temp_vision_frame : 
 	temp_vision_frame = merge_vision_mask(temp_vision_frame, temp_vision_mask)
 	temp_vision_frame = cv2.resize(temp_vision_frame, target_vision_frame.shape[1::-1])
 	return temp_vision_frame
+
+def play_preview(preview_mode : PreviewMode, preview_resolution : str, start_frame : int, fps : int) -> Generator:
+	global PREVIEW_PLAYING
+
+	if not is_video(state_manager.get_item('target_path')):
+		yield gradio.Image(), start_frame
+		return
+
+	total_frames = count_video_frame_total(state_manager.get_item('target_path'))
+
+	if PREVIEW_PLAYING:
+		PREVIEW_PLAYING = False
+		logger.info('Preview playback stopped by user', __name__)
+		yield gradio.Image(), start_frame
+		return
+
+	PREVIEW_PLAYING = True
+	current_frame = int(start_frame)
+	frame_interval = 20
+	frame_delay = 1.0 / max(int(fps), 1)
+
+	logger.info(f'Starting preview playback at {fps} fps, frame interval: {frame_interval}', __name__)
+
+	while PREVIEW_PLAYING:
+		preview_image = update_preview_image(preview_mode, preview_resolution, current_frame)
+		yield preview_image, current_frame
+		sleep(frame_delay)
+		current_frame += frame_interval
+		if current_frame >= total_frames:
+			logger.info('Reached end of video, looping...', __name__)
+			current_frame = 0
+
+	PREVIEW_PLAYING = False
+	logger.info('Preview playback stopped', __name__)
+	yield gradio.Image(), current_frame
+

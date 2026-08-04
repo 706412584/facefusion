@@ -20,8 +20,8 @@ def render() -> None:
 	has_lip_syncer = 'lip_syncer' in state_manager.get_item('processors')
 	LIP_SYNCER_MODEL_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.model_dropdown', 'facefusion.processors.modules.lip_syncer'),
-		choices = lip_syncer_choices.lip_syncer_models,
-		value = state_manager.get_item('lip_syncer_model'),
+		choices = translator.translate_choices(lip_syncer_choices.lip_syncer_models),
+		value = translator.translate_choice(state_manager.get_item('lip_syncer_model')),
 		visible = has_lip_syncer
 	)
 	LIP_SYNCER_WEIGHT_SLIDER = gradio.Slider(
@@ -51,12 +51,13 @@ def remote_update(processors : List[str]) -> Tuple[gradio.Dropdown, gradio.Slide
 
 
 def update_lip_syncer_model(lip_syncer_model : LipSyncerModel) -> gradio.Dropdown:
+	lip_syncer_model = translator.untranslate_choice(lip_syncer_model)
 	lip_syncer_module = load_processor_module('lip_syncer')
 	lip_syncer_module.clear_inference_pool()
 	state_manager.set_item('lip_syncer_model', lip_syncer_model)
 
 	if lip_syncer_module.pre_check():
-		return gradio.Dropdown(value = state_manager.get_item('lip_syncer_model'))
+		return gradio.Dropdown(value = translator.translate_choice(state_manager.get_item('lip_syncer_model')))
 	return gradio.Dropdown()
 
 

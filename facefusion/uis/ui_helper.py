@@ -18,9 +18,10 @@ def convert_str_none(value : str) -> Optional[str]:
 	return value
 
 
-def suggest_output_path(output_directory_path : str, target_path : str) -> Optional[str]:
+def suggest_output_path(output_directory_path : str, target_path : str, output_seed : Optional[str] = None) -> Optional[str]:
 	if is_image(target_path) or is_video(target_path):
-		output_file_name = hashlib.sha1(str(state_manager.get_state()).encode()).hexdigest()[:8]
+		output_hash_source = output_seed or str(state_manager.get_state())
+		output_file_name = hashlib.sha1(output_hash_source.encode()).hexdigest()[:8]
 		target_file_extension = get_file_extension(target_path)
 		return os.path.join(output_directory_path, output_file_name + target_file_extension)
 	return None

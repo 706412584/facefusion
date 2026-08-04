@@ -55,8 +55,8 @@ def render() -> None:
 	)
 	OUTPUT_AUDIO_ENCODER_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.output_audio_encoder_dropdown'),
-		choices = available_encoder_set.get('audio'),
-		value = state_manager.get_item('output_audio_encoder'),
+		choices = translator.translate_choices(available_encoder_set.get('audio')),
+		value = translator.translate_choice(state_manager.get_item('output_audio_encoder')),
 		visible = is_video(state_manager.get_item('target_path'))
 	)
 	OUTPUT_AUDIO_QUALITY_SLIDER = gradio.Slider(
@@ -77,14 +77,14 @@ def render() -> None:
 	)
 	OUTPUT_VIDEO_ENCODER_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.output_video_encoder_dropdown'),
-		choices = available_encoder_set.get('video'),
-		value = state_manager.get_item('output_video_encoder'),
+		choices = translator.translate_choices(available_encoder_set.get('video')),
+		value = translator.translate_choice(state_manager.get_item('output_video_encoder')),
 		visible = is_video(state_manager.get_item('target_path'))
 	)
 	OUTPUT_VIDEO_PRESET_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.output_video_preset_dropdown'),
-		choices = facefusion.choices.output_video_presets,
-		value = state_manager.get_item('output_video_preset'),
+		choices = translator.translate_choices(facefusion.choices.output_video_presets),
+		value = translator.translate_choice(state_manager.get_item('output_video_preset')),
 		visible = is_video(state_manager.get_item('target_path'))
 	)
 	OUTPUT_VIDEO_QUALITY_SLIDER = gradio.Slider(
@@ -153,6 +153,7 @@ def update_output_image_scale(output_image_scale : Scale) -> None:
 
 
 def update_output_audio_encoder(output_audio_encoder : AudioEncoder) -> None:
+	output_audio_encoder = translator.untranslate_choice(output_audio_encoder)
 	state_manager.set_item('output_audio_encoder', output_audio_encoder)
 
 
@@ -165,10 +166,12 @@ def update_output_audio_volume(output_audio_volume: float) -> None:
 
 
 def update_output_video_encoder(output_video_encoder : VideoEncoder) -> None:
+	output_video_encoder = translator.untranslate_choice(output_video_encoder)
 	state_manager.set_item('output_video_encoder', output_video_encoder)
 
 
 def update_output_video_preset(output_video_preset : VideoPreset) -> None:
+	output_video_preset = translator.untranslate_choice(output_video_preset)
 	state_manager.set_item('output_video_preset', output_video_preset)
 
 

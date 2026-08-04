@@ -12,5 +12,16 @@ LOCALES : Locales =\
 		{
 			'items_checkbox_group': 'FACE DEBUGGER ITEMS'
 		}
+	},
+	'zh':
+	{
+		'help':
+		{
+			'items': '加载单个或多个处理器（选项：{choices}）'
+		},
+		'uis':
+		{
+			'items_checkbox_group': '人脸调试项目'
+		}
 	}
 }

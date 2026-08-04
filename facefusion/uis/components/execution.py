@@ -16,7 +16,7 @@ def render() -> None:
 
 	EXECUTION_PROVIDERS_CHECKBOX_GROUP = gradio.CheckboxGroup(
 		label = translator.get('uis.execution_providers_checkbox_group'),
-		choices = get_available_execution_providers(),
+		choices = translator.translate_choices(get_available_execution_providers()),
 		value = state_manager.get_item('execution_providers')
 	)
 
@@ -43,6 +43,6 @@ def update_execution_providers(execution_providers : List[ExecutionProvider]) ->
 		if hasattr(module, 'clear_inference_pool'):
 			module.clear_inference_pool()
 
-	execution_providers = execution_providers or get_available_execution_providers()
+	execution_providers = translator.untranslate_choices(execution_providers or get_available_execution_providers())
 	state_manager.set_item('execution_providers', execution_providers)
 	return gradio.CheckboxGroup(value = state_manager.get_item('execution_providers'))

@@ -22,8 +22,8 @@ def render() -> None:
 	has_frame_colorizer = 'frame_colorizer' in state_manager.get_item('processors')
 	FRAME_COLORIZER_MODEL_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.model_dropdown', 'facefusion.processors.modules.frame_colorizer'),
-		choices = frame_colorizer_choices.frame_colorizer_models,
-		value = state_manager.get_item('frame_colorizer_model'),
+		choices = translator.translate_choices(frame_colorizer_choices.frame_colorizer_models),
+		value = translator.translate_choice(state_manager.get_item('frame_colorizer_model')),
 		visible = has_frame_colorizer
 	)
 	FRAME_COLORIZER_SIZE_DROPDOWN = gradio.Dropdown(
@@ -61,12 +61,13 @@ def remote_update(processors : List[str]) -> Tuple[gradio.Dropdown, gradio.Slide
 
 
 def update_frame_colorizer_model(frame_colorizer_model : FrameColorizerModel) -> gradio.Dropdown:
+	frame_colorizer_model = translator.untranslate_choice(frame_colorizer_model)
 	frame_colorizer_module = load_processor_module('frame_colorizer')
 	frame_colorizer_module.clear_inference_pool()
 	state_manager.set_item('frame_colorizer_model', frame_colorizer_model)
 
 	if frame_colorizer_module.pre_check():
-		return gradio.Dropdown(value = state_manager.get_item('frame_colorizer_model'))
+		return gradio.Dropdown(value = translator.translate_choice(state_manager.get_item('frame_colorizer_model')))
 	return gradio.Dropdown()
 
 

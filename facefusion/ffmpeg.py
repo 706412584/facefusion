@@ -245,7 +245,11 @@ def restore_audio(target_path : str, output_path : str, trim_frame_start : int, 
 		ffmpeg_builder.force_output(output_path)
 	)
 
-	return run_ffmpeg(commands).returncode == 0
+	result = run_ffmpeg(commands)
+	if result.returncode != 0:
+		logger.error(f'FFmpeg restore_audio command failed with code {result.returncode}', __name__)
+		logger.debug(f'Command: {" ".join(commands)}', __name__)
+	return result.returncode == 0
 
 
 def replace_audio(target_path : str, audio_path : str, output_path : str) -> bool:

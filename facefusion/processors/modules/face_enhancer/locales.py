@@ -16,5 +16,20 @@ LOCALES : Locales =\
 			'model_dropdown': 'FACE ENHANCER MODEL',
 			'weight_slider': 'FACE ENHANCER WEIGHT'
 		}
+	},
+	'zh':
+	{
+		'help':
+		{
+			'model': '选择负责人脸增强的模型',
+			'blend': '将增强后的人脸混合到原人脸',
+			'weight': '指定应用于人脸的权重程度'
+		},
+		'uis':
+		{
+			'blend_slider': '人脸增强混合',
+			'model_dropdown': '人脸增强模型',
+			'weight_slider': '人脸增强权重'
+		}
 	}
 }

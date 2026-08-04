@@ -27,8 +27,9 @@ def multi_process_capture(camera_capture : cv2.VideoCapture, camera_fps : Fps) -
 
 			while camera_capture and camera_capture.isOpened():
 				_, capture_vision_frame = camera_capture.read()
-				if analyse_stream(capture_vision_frame, camera_fps):
-					camera_capture.release()
+				# 跳过流媒体内容检测
+				# if analyse_stream(capture_vision_frame, camera_fps):
+				# 	camera_capture.release()
 
 				if is_vision_frame(capture_vision_frame):
 					future = executor.submit(process_stream_frame, source_vision_frames, capture_vision_frame)

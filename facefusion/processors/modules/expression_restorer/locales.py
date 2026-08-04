@@ -16,5 +16,20 @@ LOCALES : Locales =\
 			'factor_slider': 'EXPRESSION RESTORER FACTOR',
 			'areas_checkbox_group': 'EXPRESSION RESTORER AREAS'
 		}
+	},
+	'zh':
+	{
+		'help':
+		{
+			'model': '选择负责表情恢复的模型',
+			'factor': '从目标人脸恢复表情的因子',
+			'areas': '选择用于表情区域的项目（选项：{choices}）'
+		},
+		'uis':
+		{
+			'model_dropdown': '表情恢复模型',
+			'factor_slider': '表情恢复因子',
+			'areas_checkbox_group': '表情恢复区域'
+		}
 	}
 }

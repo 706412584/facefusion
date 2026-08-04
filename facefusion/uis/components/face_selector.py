@@ -53,26 +53,26 @@ def render() -> None:
 		reference_face_gallery_options['value'] = extract_gallery_frames(source_vision_frames, target_vision_frame)
 	FACE_SELECTOR_MODE_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.face_selector_mode_dropdown'),
-		choices = facefusion.choices.face_selector_modes,
-		value = state_manager.get_item('face_selector_mode')
+		choices = translator.translate_choices(facefusion.choices.face_selector_modes),
+		value = translator.translate_choice(state_manager.get_item('face_selector_mode'))
 	)
 	REFERENCE_FACE_POSITION_GALLERY = gradio.Gallery(**reference_face_gallery_options)
 	with gradio.Group():
 		with gradio.Row():
 			FACE_SELECTOR_ORDER_DROPDOWN = gradio.Dropdown(
 				label = translator.get('uis.face_selector_order_dropdown'),
-				choices = facefusion.choices.face_selector_orders,
-				value = state_manager.get_item('face_selector_order')
+				choices = translator.translate_choices(facefusion.choices.face_selector_orders),
+				value = translator.translate_choice(state_manager.get_item('face_selector_order'))
 			)
 			FACE_SELECTOR_GENDER_DROPDOWN = gradio.Dropdown(
 				label = translator.get('uis.face_selector_gender_dropdown'),
-				choices = [ 'none' ] + facefusion.choices.face_selector_genders,
-				value = state_manager.get_item('face_selector_gender') or 'none'
+				choices = translator.translate_choices([ 'none' ] + facefusion.choices.face_selector_genders),
+				value = translator.translate_choice(state_manager.get_item('face_selector_gender') or 'none')
 			)
 			FACE_SELECTOR_RACE_DROPDOWN = gradio.Dropdown(
 				label = translator.get('uis.face_selector_race_dropdown'),
-				choices = [ 'none' ] + facefusion.choices.face_selector_races,
-				value = state_manager.get_item('face_selector_race') or 'none'
+				choices = translator.translate_choices([ 'none' ] + facefusion.choices.face_selector_races),
+				value = translator.translate_choice(state_manager.get_item('face_selector_race') or 'none')
 			)
 		with gradio.Row():
 			face_selector_age_start = state_manager.get_item('face_selector_age_start') or facefusion.choices.face_selector_age_range[0]
@@ -138,11 +138,12 @@ def listen() -> None:
 
 	preview_frame_slider = get_ui_component('preview_frame_slider')
 	if preview_frame_slider:
-		for method in [ 'change', 'release' ]:
-			getattr(preview_frame_slider, method)(update_reference_position_gallery, inputs = preview_frame_slider, outputs = REFERENCE_FACE_POSITION_GALLERY, show_progress = 'hidden')
+		# 仅在松开鼠标时刷新参考人脸画廊，避免拖动过程中反复跑人脸检测导致卡顿
+		preview_frame_slider.release(update_reference_position_gallery, inputs = preview_frame_slider, outputs = REFERENCE_FACE_POSITION_GALLERY, show_progress = 'hidden')
 
 
 def update_face_selector_mode(face_selector_mode : FaceSelectorMode) -> Tuple[gradio.Gallery, gradio.Slider]:
+	face_selector_mode = translator.untranslate_choice(face_selector_mode)
 	state_manager.set_item('face_selector_mode', face_selector_mode)
 	if face_selector_mode == 'many':
 		return gradio.Gallery(visible = False), gradio.Slider(visible = False)
@@ -153,16 +154,19 @@ def update_face_selector_mode(face_selector_mode : FaceSelectorMode) -> Tuple[gr
 
 
 def update_face_selector_order(face_analyser_order : FaceSelectorOrder) -> gradio.Gallery:
+	face_analyser_order = translator.untranslate_choice(face_analyser_order)
 	state_manager.set_item('face_selector_order', convert_str_none(face_analyser_order))
 	return update_reference_position_gallery()
 
 
 def update_face_selector_gender(face_selector_gender : FaceSelectorGender) -> gradio.Gallery:
+	face_selector_gender = translator.untranslate_choice(face_selector_gender)
 	state_manager.set_item('face_selector_gender', convert_str_none(face_selector_gender))
 	return update_reference_position_gallery()
 
 
 def update_face_selector_race(face_selector_race : FaceSelectorRace) -> gradio.Gallery:
+	face_selector_race = translator.untranslate_choice(face_selector_race)
 	state_manager.set_item('face_selector_race', convert_str_none(face_selector_race))
 	return update_reference_position_gallery()
 

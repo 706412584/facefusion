@@ -34,8 +34,8 @@ def render() -> None:
 		with gradio.Column(visible = is_job_runner) as JOB_RUNNER_WRAPPER:
 			JOB_RUNNER_JOB_ACTION_DROPDOWN = gradio.Dropdown(
 				label = translator.get('uis.job_runner_job_action_dropdown'),
-				choices = uis_choices.job_runner_actions,
-				value = get_first(uis_choices.job_runner_actions)
+				choices = translator.translate_choices(uis_choices.job_runner_actions),
+				value = translator.translate_choice(get_first(uis_choices.job_runner_actions))
 			)
 			JOB_RUNNER_JOB_ID_DROPDOWN = gradio.Dropdown(
 				label = translator.get('uis.job_runner_job_id_dropdown'),
@@ -68,10 +68,11 @@ def listen() -> None:
 
 
 def remote_update(ui_workflow : UiWorkflow) -> Tuple[gradio.Row, gradio.Dropdown, gradio.Dropdown]:
+	ui_workflow = translator.untranslate_choice(ui_workflow)
 	is_job_runner = ui_workflow == 'job_runner'
 	queued_job_ids = job_manager.find_job_ids('queued') or [ 'none' ]
 
-	return gradio.Row(visible = is_job_runner), gradio.Dropdown(value = get_first(uis_choices.job_runner_actions), choices = uis_choices.job_runner_actions), gradio.Dropdown(value = get_last(queued_job_ids), choices = queued_job_ids)
+	return gradio.Row(visible = is_job_runner), gradio.Dropdown(value = translator.translate_choice(get_first(uis_choices.job_runner_actions)), choices = translator.translate_choices(uis_choices.job_runner_actions)), gradio.Dropdown(value = get_last(queued_job_ids), choices = queued_job_ids)
 
 
 def start() -> Tuple[gradio.Button, gradio.Button]:
@@ -81,6 +82,7 @@ def start() -> Tuple[gradio.Button, gradio.Button]:
 
 
 def run(job_action : JobRunnerAction, job_id : str) -> Tuple[gradio.Button, gradio.Button, gradio.Dropdown]:
+	job_action = translator.untranslate_choice(job_action)
 	job_id = convert_str_none(job_id)
 
 	for key in job_store.get_job_keys():
@@ -130,6 +132,7 @@ def stop() -> Tuple[gradio.Button, gradio.Button]:
 
 
 def update_job_action(job_action : JobRunnerAction) -> gradio.Dropdown:
+	job_action = translator.untranslate_choice(job_action)
 	if job_action == 'job-run':
 		updated_job_ids = job_manager.find_job_ids('queued') or [ 'none' ]
 

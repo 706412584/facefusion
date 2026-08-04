@@ -14,8 +14,8 @@ def render() -> None:
 
 	VIDEO_MEMORY_STRATEGY_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.video_memory_strategy_dropdown'),
-		choices = facefusion.choices.video_memory_strategies,
-		value = state_manager.get_item('video_memory_strategy')
+		choices = translator.translate_choices(facefusion.choices.video_memory_strategies),
+		value = translator.translate_choice(state_manager.get_item('video_memory_strategy'))
 	)
 
 
@@ -24,4 +24,5 @@ def listen() -> None:
 
 
 def update_video_memory_strategy(video_memory_strategy : VideoMemoryStrategy) -> None:
+	video_memory_strategy = translator.untranslate_choice(video_memory_strategy)
 	state_manager.set_item('video_memory_strategy', video_memory_strategy)

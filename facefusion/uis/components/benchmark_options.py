@@ -19,8 +19,8 @@ def render() -> None:
 
 	BENCHMARK_MODE_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.benchmark_mode_dropdown'),
-		choices = facefusion.choices.benchmark_modes,
-		value = state_manager.get_item('benchmark_mode')
+		choices = translator.translate_choices(facefusion.choices.benchmark_modes),
+		value = translator.translate_choice(state_manager.get_item('benchmark_mode'))
 	)
 	BENCHMARK_RESOLUTIONS_CHECKBOX_GROUP = gradio.CheckboxGroup(
 		label = translator.get('uis.benchmark_resolutions_checkbox_group'),
@@ -43,6 +43,7 @@ def listen() -> None:
 
 
 def update_benchmark_mode(benchmark_mode : BenchmarkMode) -> None:
+	benchmark_mode = translator.untranslate_choice(benchmark_mode)
 	state_manager.set_item('benchmark_mode', benchmark_mode)
 
 

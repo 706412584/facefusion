@@ -22,8 +22,8 @@ def render() -> None:
 	has_face_enhancer = 'face_enhancer' in state_manager.get_item('processors')
 	FACE_ENHANCER_MODEL_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.model_dropdown', 'facefusion.processors.modules.face_enhancer'),
-		choices = face_enhancer_choices.face_enhancer_models,
-		value = state_manager.get_item('face_enhancer_model'),
+		choices = translator.translate_choices(face_enhancer_choices.face_enhancer_models),
+		value = translator.translate_choice(state_manager.get_item('face_enhancer_model')),
 		visible = has_face_enhancer
 	)
 	FACE_ENHANCER_BLEND_SLIDER = gradio.Slider(
@@ -63,12 +63,13 @@ def remote_update(processors : List[str]) -> Tuple[gradio.Dropdown, gradio.Slide
 
 
 def update_face_enhancer_model(face_enhancer_model : FaceEnhancerModel) -> Tuple[gradio.Dropdown, gradio.Slider]:
+	face_enhancer_model = translator.untranslate_choice(face_enhancer_model)
 	face_enhancer_module = load_processor_module('face_enhancer')
 	face_enhancer_module.clear_inference_pool()
 	state_manager.set_item('face_enhancer_model', face_enhancer_model)
 
 	if face_enhancer_module.pre_check():
-		return gradio.Dropdown(value = state_manager.get_item('face_enhancer_model')), gradio.Slider(visible = face_enhancer_module.has_weight_input())
+		return gradio.Dropdown(value = translator.translate_choice(state_manager.get_item('face_enhancer_model'))), gradio.Slider(visible = face_enhancer_module.has_weight_input())
 	return gradio.Dropdown(), gradio.Slider()
 
 

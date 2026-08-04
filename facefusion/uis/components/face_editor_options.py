@@ -46,8 +46,8 @@ def render() -> None:
 	has_face_editor = 'face_editor' in state_manager.get_item('processors')
 	FACE_EDITOR_MODEL_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.model_dropdown', 'facefusion.processors.modules.face_editor'),
-		choices = face_editor_choices.face_editor_models,
-		value = state_manager.get_item('face_editor_model'),
+		choices = translator.translate_choices(face_editor_choices.face_editor_models),
+		value = translator.translate_choice(state_manager.get_item('face_editor_model')),
 		visible = has_face_editor
 	)
 	FACE_EDITOR_EYEBROW_DIRECTION_SLIDER = gradio.Slider(
@@ -207,12 +207,13 @@ def remote_update(processors : List[str]) -> Tuple[gradio.Dropdown, gradio.Slide
 
 
 def update_face_editor_model(face_editor_model : FaceEditorModel) -> gradio.Dropdown:
+	face_editor_model = translator.untranslate_choice(face_editor_model)
 	face_editor_module = load_processor_module('face_editor')
 	face_editor_module.clear_inference_pool()
 	state_manager.set_item('face_editor_model', face_editor_model)
 
 	if face_editor_module.pre_check():
-		return gradio.Dropdown(value = state_manager.get_item('face_editor_model'))
+		return gradio.Dropdown(value = translator.translate_choice(state_manager.get_item('face_editor_model')))
 	return gradio.Dropdown()
 
 

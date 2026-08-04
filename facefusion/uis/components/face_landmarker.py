@@ -18,8 +18,8 @@ def render() -> None:
 
 	FACE_LANDMARKER_MODEL_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.face_landmarker_model_dropdown'),
-		choices = facefusion.choices.face_landmarker_models,
-		value = state_manager.get_item('face_landmarker_model')
+		choices = translator.translate_choices(facefusion.choices.face_landmarker_models),
+		value = translator.translate_choice(state_manager.get_item('face_landmarker_model'))
 	)
 	FACE_LANDMARKER_SCORE_SLIDER = gradio.Slider(
 		label = translator.get('uis.face_landmarker_score_slider'),
@@ -38,11 +38,12 @@ def listen() -> None:
 
 
 def update_face_landmarker_model(face_landmarker_model : FaceLandmarkerModel) -> gradio.Dropdown:
+	face_landmarker_model = translator.untranslate_choice(face_landmarker_model)
 	face_landmarker.clear_inference_pool()
 	state_manager.set_item('face_landmarker_model', face_landmarker_model)
 
 	if face_landmarker.pre_check():
-		gradio.Dropdown(value = state_manager.get_item('face_landmarker_model'))
+		return gradio.Dropdown(value = translator.translate_choice(state_manager.get_item('face_landmarker_model')))
 	return gradio.Dropdown()
 
 

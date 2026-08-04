@@ -20,8 +20,8 @@ def render() -> None:
 	has_age_modifier = 'age_modifier' in state_manager.get_item('processors')
 	AGE_MODIFIER_MODEL_DROPDOWN = gradio.Dropdown(
 		label = translator.get('uis.model_dropdown', 'facefusion.processors.modules.age_modifier'),
-		choices = age_modifier_choices.age_modifier_models,
-		value = state_manager.get_item('age_modifier_model'),
+		choices = translator.translate_choices(age_modifier_choices.age_modifier_models),
+		value = translator.translate_choice(state_manager.get_item('age_modifier_model')),
 		visible = has_age_modifier
 	)
 	AGE_MODIFIER_DIRECTION_SLIDER = gradio.Slider(
@@ -51,12 +51,13 @@ def remote_update(processors : List[str]) -> Tuple[gradio.Dropdown, gradio.Slide
 
 
 def update_age_modifier_model(age_modifier_model : AgeModifierModel) -> gradio.Dropdown:
+	age_modifier_model = translator.untranslate_choice(age_modifier_model)
 	age_modifier_module = load_processor_module('age_modifier')
 	age_modifier_module.clear_inference_pool()
 	state_manager.set_item('age_modifier_model', age_modifier_model)
 
 	if age_modifier_module.pre_check():
-		return gradio.Dropdown(value = state_manager.get_item('age_modifier_model'))
+		return gradio.Dropdown(value = translator.translate_choice(state_manager.get_item('age_modifier_model')))
 	return gradio.Dropdown()
 
 

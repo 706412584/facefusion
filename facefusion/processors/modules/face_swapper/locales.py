@@ -16,5 +16,20 @@ LOCALES : Locales =\
 			'pixel_boost_dropdown': 'FACE SWAPPER PIXEL BOOST',
 			'weight_slider': 'FACE SWAPPER WEIGHT'
 		}
+	},
+	'zh':
+	{
+		'help':
+		{
+			'model': '选择负责人脸交换的模型',
+			'pixel_boost': '选择人脸交换的像素增强分辨率',
+			'weight': '指定应用于人脸的权重程度'
+		},
+		'uis':
+		{
+			'model_dropdown': '人脸交换模型',
+			'pixel_boost_dropdown': '人脸交换像素增强',
+			'weight_slider': '人脸交换权重'
+		}
 	}
 }
