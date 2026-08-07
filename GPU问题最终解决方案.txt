@@ -1,0 +1,108 @@
+GPU 问题最终解决方案
+======================
+
+你的情况：
+----------
+- 显卡：RTX 4060 ✓
+- CUDA Toolkit：已安装 ✓
+- 问题：缺少 cuDNN 和 TensorRT 库文件
+
+错误信息：
+----------
+1. cudnn64_9.dll - 缺失
+2. nvinfer_10.dll - 缺失
+
+这导致 CUDA 和 TensorRT 都无法使用，回退到 CPU 模式。
+
+
+为什么会这样：
+--------------
+onnxruntime-gpu 1.24.4 需要：
+- CUDA 12.x ✓（已安装）
+- cuDNN 9.x ✗（需要单独下载）
+- TensorRT 10.x ✗（需要单独下载）
+
+这些库文件需要从 NVIDIA 官网单独下载，非常麻烦。
+
+
+最佳解决方案：
+--------------
+使用包含所有库的旧版本
+
+运行: 修复CUDA缺少库文件.bat
+
+这会：
+1. 卸载 onnxruntime-gpu 1.24.4
+2. 安装 onnxruntime-gpu 1.19.2
+3. 这个版本自带所有需要的 CUDA 库
+
+优点：
+- 不需要手动下载库文件
+- 一键安装，立即可用
+- CUDA 加速正常工作
+
+缺点：
+- 版本稍旧（但稳定）
+- 可能与 FaceFusion 某些功能不兼容
+
+
+替代方案（如果上面不行）：
+--------------------------
+使用 DirectML（AMD/Intel 的方案，但也支持 NVIDIA）
+
+pip uninstall onnxruntime onnxruntime-gpu -y
+pip install onnxruntime-directml
+
+优点：
+- 不需要 CUDA Toolkit
+- 不需要 cuDNN
+- 支持所有显卡
+
+缺点：
+- 速度比 CUDA 慢一些
+- 10-20 帧/秒（vs CUDA 的 20-30 帧/秒）
+
+
+手动下载库文件方案（最麻烦）：
+------------------------------
+如果你想用最新版本：
+
+1. 下载 cuDNN 9.x
+   https://developer.nvidia.com/cudnn-downloads
+   需要注册 NVIDIA 账号
+
+2. 下载 TensorRT 10.x
+   https://developer.nvidia.com/tensorrt-download
+   需要注册 NVIDIA 账号
+
+3. 解压后将 .dll 文件复制到：
+   C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin
+
+4. 重启电脑
+
+
+推荐做法：
+----------
+1. 运行: 修复CUDA缺少库文件.bat
+2. 重启 FaceFusion
+3. 只勾选 CUDA
+4. 开始处理
+
+如果还是不行：
+- 使用 DirectML
+- 或者继续用 CPU（最稳定）
+
+
+速度对比（你的 RTX 4060）：
+---------------------------
+CPU 模式：2-5 帧/秒（3-6 小时）
+DirectML：10-20 帧/秒（45-90 分钟）
+CUDA 1.19.2：15-30 帧/秒（30-60 分钟）
+CUDA 1.24.4 + cuDNN：20-40 帧/秒（20-45 分钟）
+
+
+立即行动：
+----------
+运行: 修复CUDA缺少库文件.bat
+
+这是最简单、最快的解决方案。

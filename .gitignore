@@ -2,6 +2,10 @@ __pycache__
 .assets
 .claude
 .caches
+.cursor
 .idea
 .jobs
 .vscode
+facefusion/out/
+*.db
+*.rar

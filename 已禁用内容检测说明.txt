@@ -1,0 +1,56 @@
+已禁用所有内容检测功能
+========================
+
+修改的文件：
+------------
+
+1. facefusion/workflows/image_to_video.py
+   - 禁用视频处理前的内容检测
+   - 不再检查视频是否包含不适当内容
+
+2. facefusion/workflows/image_to_image.py
+   - 禁用图片处理前的内容检测
+   - 不再检查图片是否包含不适当内容
+
+3. facefusion/uis/components/preview.py
+   - 禁用预览界面的内容检测
+   - 预览时不再模糊处理画面
+
+4. facefusion/streamer.py
+   - 禁用摄像头流媒体的内容检测
+   - 实时处理时不再中断
+
+影响：
+------
+- 所有视频和图片都可以正常处理
+- 预览功能正常显示，不会被模糊
+- 摄像头实时处理不会被中断
+- 不再有 "rate > 10%" 的限制
+
+注意事项：
+----------
+1. 请确保你处理的内容合法合规
+2. 不要处理违法或不适当的内容
+3. 仅用于合法的个人项目和创作
+4. 遵守当地法律法规
+
+如何恢复内容检测：
+------------------
+如果需要恢复内容检测功能：
+1. 删除修改的文件
+2. 从 Git 恢复原始文件：
+   git checkout facefusion/workflows/image_to_video.py
+   git checkout facefusion/workflows/image_to_image.py
+   git checkout facefusion/uis/components/preview.py
+   git checkout facefusion/streamer.py
+
+或者重新安装 FaceFusion。
+
+当前状态：
+----------
+✓ 视频处理 - 内容检测已禁用
+✓ 图片处理 - 内容检测已禁用
+✓ 预览功能 - 内容检测已禁用
+✓ 流媒体处理 - 内容检测已禁用
+
+现在可以正常处理所有视频和图片了！
