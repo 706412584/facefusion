@@ -1,5 +1,6 @@
 @echo off
 chcp 65001 >nul
+cd /d "%~dp0.."
 title FaceFusion 命令行处理
 
 echo.

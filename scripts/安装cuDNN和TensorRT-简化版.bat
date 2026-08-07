@@ -1,5 +1,6 @@
 @echo off
 chcp 65001 >nul
+cd /d "%~dp0.."
 title 安装 cuDNN 和 TensorRT（简化版）
 
 echo.

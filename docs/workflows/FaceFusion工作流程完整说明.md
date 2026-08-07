@@ -182,7 +182,7 @@ python facefusion.py run --source-paths "源文件.jpg" --target-path "目标视
 
 2. **如果还是有问题：**
    - 使用命令行模式
-   - 运行：`命令行处理.bat`
+   - 运行：`scripts/命令行处理.bat`
    - 输入文件路径
    - 直接处理
 

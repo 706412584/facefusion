@@ -44,7 +44,7 @@ def analyze_gpu(gpus):
     nvidia_gpus = [gpu for gpu in gpus if 'nvidia' in gpu.lower()]
     if nvidia_gpus:
         print("\n  ✓ 检测到 NVIDIA 显卡")
-        print("  推荐: 运行 安装CUDA支持.bat")
+        print("  推荐: 运行 scripts/安装CUDA支持.bat")
         print("  预计速度: 20-40 帧/秒 (最快)")
         return
     

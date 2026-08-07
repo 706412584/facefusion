@@ -1,5 +1,6 @@
 @echo off
 chcp 65001 >nul
+cd /d "%~dp0.."
 title 检查显卡类型
 
 echo.
@@ -19,7 +20,7 @@ REM 检查是否有 NVIDIA 显卡
 powershell -Command "Get-CimInstance -ClassName Win32_VideoController | Select-Object -ExpandProperty Name" | findstr /i "NVIDIA" >nul
 if %errorlevel%==0 (
     echo    检测到 NVIDIA 显卡
-    echo    推荐: 运行 安装CUDA支持.bat
+    echo    推荐: 运行 scripts/安装CUDA支持.bat
     echo    预计速度: 20-40 帧/秒
     echo.
     goto :end

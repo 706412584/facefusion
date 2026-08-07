@@ -1,5 +1,6 @@
 @echo off
 chcp 65001 >nul
+cd /d "%~dp0.."
 title 配置 TensorRT
 
 echo.
@@ -101,7 +102,7 @@ echo.
 echo 重要：必须重启电脑才能生效！
 echo.
 echo 重启后：
-echo 1. 运行: 验证GPU库安装.bat
+echo 1. 运行: scripts/验证GPU库安装.bat
 echo 2. 运行: 启动FaceFusion.bat
 echo 3. 勾选 CUDA 和 TensorRT
 echo 4. 开始处理

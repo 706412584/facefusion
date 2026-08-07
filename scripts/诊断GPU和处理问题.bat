@@ -1,5 +1,6 @@
 @echo off
 chcp 65001 >nul
+cd /d "%~dp0.."
 title 诊断 GPU 和处理问题
 
 echo.

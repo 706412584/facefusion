@@ -1,5 +1,6 @@
 @echo off
 chcp 65001 >nul
+cd /d "%~dp0.."
 title 安装 CUDA 支持（仅限 NVIDIA 显卡）
 
 echo.

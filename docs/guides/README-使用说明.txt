@@ -18,7 +18,7 @@ FaceFusion 中文版 - 快速使用指南
 你的显卡：RTX 4060
 
 ### 方案 1：已安装 cuDNN（推荐）
-1. 运行: 验证GPU库安装.bat
+1. 运行: scripts/验证GPU库安装.bat
 2. 检查 cuDNN 是否安装成功
 3. 重启电脑
 4. 启动 FaceFusion
@@ -37,15 +37,15 @@ FaceFusion 中文版 - 快速使用指南
 
 ## 检查工具
 
-- 检查显卡类型: 检查显卡.bat
-- 详细 GPU 信息: python check_gpu.py
-- 验证安装: 验证GPU库安装.bat
+- 检查显卡类型: scripts/检查显卡.bat
+- 详细 GPU 信息: python scripts/check_gpu.py
+- 验证安装: scripts/验证GPU库安装.bat
 
 
 ## 文档
 
-- GPU 问题解决: GPU问题最终解决方案.txt
-- GPU 配置指南: GPU加速配置指南.txt
+- GPU 问题解决: docs/gpu/GPU问题最终解决方案.txt
+- GPU 配置指南: docs/gpu/GPU加速配置指南.txt
 - cuDNN/TensorRT 安装: 下载cuDNN和TensorRT指南.md
 - 多人脸换脸: WebUI多人脸使用指南.md
 - 处理流程说明: 处理流程说明.txt
@@ -64,7 +64,7 @@ FaceFusion 中文版 - 快速使用指南
 
 ## 下一步
 
-1. 安装完 cuDNN 后，运行: 验证GPU库安装.bat
+1. 安装完 cuDNN 后，运行: scripts/验证GPU库安装.bat
 2. 重启电脑
 3. 运行: 启动FaceFusion.bat
 4. 勾选 CUDA

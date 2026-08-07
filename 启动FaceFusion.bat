@@ -29,7 +29,7 @@ if errorlevel 1 (
 
 REM 自动检测和配置代理
 echo [代理] 正在检测代理设置...
-python -c "import setup_proxy; proxy_info = setup_proxy.detect_proxy(); print(f'http://{proxy_info[0]}:{proxy_info[1]}' if proxy_info else 'NONE')" > temp_proxy.txt 2>nul
+python -c "import sys; sys.path.insert(0, 'scripts'); import setup_proxy; proxy_info = setup_proxy.detect_proxy(); print(f'http://{proxy_info[0]}:{proxy_info[1]}' if proxy_info else 'NONE')" > temp_proxy.txt 2>nul
 set /p PROXY_URL=<temp_proxy.txt
 del temp_proxy.txt 2>nul
 

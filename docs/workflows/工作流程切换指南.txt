@@ -59,7 +59,7 @@ instant_runner 卡住的可能原因：
 
 1. GPU 初始化失败
    - 检查终端是否有 CUDA/TensorRT 错误
-   - 运行: 验证GPU库安装.bat
+   - 运行: scripts/验证GPU库安装.bat
 
 2. 任务队列阻塞
    - 已清理（刚才运行了清理脚本）
@@ -86,7 +86,7 @@ instant_runner 卡住的可能原因：
    - 如果是 0%，说明 GPU 未工作
 
 3. 验证 GPU 库
-   运行: 验证GPU库安装.bat
+   运行: scripts/验证GPU库安装.bat
    应该看到：
    - [OK] cuDNN 已安装
    - [OK] TensorRT 已安装
@@ -105,7 +105,7 @@ instant_runner 卡住的可能原因：
 1. 关闭 FaceFusion
 
 2. 运行验证：
-   验证GPU库安装.bat
+   scripts/验证GPU库安装.bat
 
 3. 重新启动：
    启动FaceFusion.bat
