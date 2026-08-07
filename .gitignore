@@ -9,3 +9,5 @@ __pycache__
 facefusion/out/
 *.db
 *.rar
+dist/
+build/
