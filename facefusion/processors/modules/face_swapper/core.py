@@ -9,7 +9,7 @@ import numpy
 import facefusion.choices
 import facefusion.jobs.job_manager
 import facefusion.jobs.job_store
-from facefusion import config, content_analyser, face_classifier, face_detector, face_landmarker, face_masker, face_recognizer, inference_manager, logger, state_manager, translator, video_manager
+from facefusion import config, content_analyser, face_classifier, face_detector, face_landmarker, face_masker, face_recognizer, inference_manager, logger, state_manager, translator, video_manager, voice_extractor
 from facefusion.common_helper import get_first, get_middle, is_macos
 from facefusion.download import conditional_download_hashes, conditional_download_sources, resolve_download_url
 from facefusion.execution import has_execution_provider
@@ -33,6 +33,36 @@ from facefusion.vision import read_static_image, read_static_images, read_static
 def create_static_model_set(download_scope : DownloadScope) -> ModelSet:
 	return\
 	{
+		'alphaface_256':
+		{
+			'__metadata__':
+			{
+				'vendor': 'AlphaFace',
+				'license': 'Non-Commercial',
+				'year': 2026
+			},
+			'hashes':
+			{
+				'face_swapper':
+				{
+					'url': resolve_download_url('models-3.9.0', 'alphaface_256.hash'),
+					'path': resolve_relative_path('../.assets/models/alphaface_256.hash')
+				}
+			},
+			'sources':
+			{
+				'face_swapper':
+				{
+					'url': resolve_download_url('models-3.9.0', 'alphaface_256.onnx'),
+					'path': resolve_relative_path('../.assets/models/alphaface_256.onnx')
+				}
+			},
+			'type': 'alphaface',
+			'template': 'arcface_128',
+			'size': (256, 256),
+			'mean': [ 0.0, 0.0, 0.0 ],
+			'standard_deviation': [ 1.0, 1.0, 1.0 ]
+		},
 		'blendswap_256':
 		{
 			'__metadata__':
@@ -504,17 +534,17 @@ def clear_inference_pool() -> None:
 
 def adjust_inference_providers() -> List[InferenceProvider]:
 	model_precision = get_model_options().get('precision')
-	model_type = get_model_options().get('type')
+	workflow_mode = state_manager.get_item('workflow_mode')
 
-	if is_macos() and has_execution_provider('coreml'):
-		if model_type in [ 'ghost', 'uniface' ] or model_precision == 'fp16':
-			return\
-			[
-				(facefusion.choices.execution_provider_set.get('coreml'),
-				{
-					'ModelFormat': 'MLProgram'
-				})
-			]
+	if is_macos() and has_execution_provider('coreml') and model_precision == 'fp16' and workflow_mode == 'image-to-video':
+		return\
+		[
+			(facefusion.choices.execution_provider_set.get('coreml'),
+			{
+				'ModelFormat': 'MLProgram',
+				'MLComputeUnits': 'CPUAndGPU'
+			})
+		]
 
 	return []
 
@@ -542,7 +572,7 @@ def apply_args(args : Args, apply_state_item : ApplyStateItem) -> None:
 
 
 def get_common_modules() -> List[ModuleType]:
-	return [ content_analyser, face_classifier, face_detector, face_landmarker, face_masker, face_recognizer ]
+	return [ content_analyser, face_classifier, face_detector, face_landmarker, face_masker, face_recognizer, voice_extractor ]
 
 
 def pre_check() -> bool:
@@ -690,6 +720,10 @@ def prepare_source_frame(source_face : Face, source_vision_frame : VisionFrame) 
 def prepare_source_embedding(source_face : Face) -> Embedding:
 	model_type = get_model_options().get('type')
 
+	if model_type == 'alphaface':
+		source_embedding = source_face.embedding.reshape((1, -1))
+		return source_embedding
+
 	if model_type == 'ghost':
 		source_embedding = source_face.embedding.reshape(-1, 512)
 		source_embedding, _ = convert_source_embedding(source_embedding)
@@ -718,7 +752,7 @@ def balance_source_embedding(source_embedding : Embedding, target_embedding : Em
 	face_swapper_weight = state_manager.get_item('face_swapper_weight')
 	face_swapper_weight = numpy.interp(face_swapper_weight, [ 0, 1 ], [ 0.35, -0.35 ]).astype(numpy.float32)
 
-	if model_type in [ 'hififace', 'hyperswap', 'inswapper', 'simswap' ]:
+	if model_type in [ 'alphaface', 'hififace', 'hyperswap', 'inswapper', 'simswap' ]:
 		target_embedding = target_embedding / numpy.linalg.norm(target_embedding)
 
 	source_embedding = source_embedding.reshape(1, -1)
