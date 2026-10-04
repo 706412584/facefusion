@@ -330,6 +330,7 @@ def concat_video(output_path : str, temp_output_paths : List[str]) -> bool:
 		ffmpeg_builder.set_input(concat_video_file.name),
 		ffmpeg_builder.copy_video_encoder(),
 		ffmpeg_builder.copy_audio_encoder(),
+		ffmpeg_builder.allow_experimental_codec(),
 		ffmpeg_builder.set_faststart(output_video_format),
 		ffmpeg_builder.force_output(output_path)
 	)
