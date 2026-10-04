@@ -1,4 +1,4 @@
-from facefusion import content_analyser, ffmpeg, logger, process_manager, state_manager, translator
+from facefusion import ffmpeg, logger, process_manager, state_manager, translator
 from facefusion.filesystem import is_image
 from facefusion.processors.core import get_processors_modules
 from facefusion.temp_helper import get_temp_file_path
@@ -9,8 +9,7 @@ from facefusion.workflows.core import conditional_get_target_vision_frames, is_p
 
 
 def analyse_image() -> ErrorCode:
-	if content_analyser.analyse_image(state_manager.get_item('target_path')):
-		return 3
+	# 本地 fork：出片前的内容检测已关闭（上游合并曾覆盖此处，勿再恢复）
 	return 0
 
 

@@ -161,6 +161,11 @@ def set_audio_encoder(audio_codec : str) -> List[Command]:
 	return [ '-c:a', audio_codec ]
 
 
+def allow_experimental_codec() -> List[Command]:
+	# flac 等编码器写入 mp4 时被 ffmpeg 判为实验特性，需 -strict -2 才肯写头
+	return [ '-strict', '-2' ]
+
+
 def copy_audio_encoder() -> List[Command]:
 	return set_audio_encoder('copy')
 

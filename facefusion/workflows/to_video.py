@@ -6,7 +6,7 @@ import cv2
 import numpy
 from tqdm import tqdm
 
-from facefusion import content_analyser, ffmpeg, logger, process_manager, state_manager, translator, video_manager
+from facefusion import ffmpeg, logger, process_manager, state_manager, translator, video_manager
 from facefusion.common_helper import get_first, get_middle
 from facefusion.filesystem import filter_audio_paths, is_video
 from facefusion.processors.core import get_processors_modules
@@ -18,10 +18,7 @@ from facefusion.workflows.core import conditional_get_target_vision_frames, is_p
 
 
 def analyse_video() -> ErrorCode:
-	trim_frame_start, trim_frame_end = restrict_trim_frame(state_manager.get_item('target_path'), state_manager.get_item('trim_frame_start'), state_manager.get_item('trim_frame_end'))
-
-	if content_analyser.analyse_video(state_manager.get_item('target_path'), trim_frame_start, trim_frame_end):
-		return 3
+	# 本地 fork：出片前的 NSFW 预检已关闭（上游合并曾覆盖此处，勿再恢复）
 	return 0
 
 
