@@ -1,24 +1,37 @@
 已禁用所有内容检测功能
 ========================
 
-修改的文件：
-------------
+说明：本文档早期版本写错了文件路径，且实际上"出片前内容检测"当时并没有真正关掉，
+导致任务在"正在分析 100%"后静默失败（错误码 3）。2026-10-05 已修正并补齐，见下。
 
-1. facefusion/workflows/image_to_video.py
-   - 禁用视频处理前的内容检测
-   - 不再检查视频是否包含不适当内容
+修改的文件（实际生效的）：
+--------------------------
 
-2. facefusion/workflows/image_to_image.py
-   - 禁用图片处理前的内容检测
-   - 不再检查图片是否包含不适当内容
+1. facefusion/workflows/to_video.py
+   - 函数 analyse_video() 直接 return 0
+   - 不再 import / 调用 content_analyser，出片前不再做 NSFW 预检
+
+2. facefusion/workflows/to_image.py
+   - 函数 analyse_image() 直接 return 0
+   - 同样不再做 NSFW 预检
 
 3. facefusion/uis/components/preview.py
-   - 禁用预览界面的内容检测
+   - 预览界面的内容检测已注释
    - 预览时不再模糊处理画面
 
 4. facefusion/streamer.py
-   - 禁用摄像头流媒体的内容检测
+   - 摄像头流媒体的内容检测已注释
    - 实时处理时不再中断
+
+注意：早期文档写的 image_to_video.py / image_to_image.py 是**错误**的。
+这两个文件只是任务编排（按顺序调用 to_video.py / to_image.py 里的函数），
+真正做 NSFW 判定的是 to_video.py / to_image.py 中的 analyse_* 函数。
+
+检测逻辑（上游行为，本地已绕过）：
+----------------------------------
+1. 每秒采样一帧，用 3 个 NSFW 模型判定
+2. 2/3 模型认为是 NSFW 则标记该帧
+3. 采样帧中 > 10% 被标记 → analyse_video 返回 True → 错误码 3，终止处理
 
 影响：
 ------
@@ -26,6 +39,21 @@
 - 预览功能正常显示，不会被模糊
 - 摄像头实时处理不会被中断
 - 不再有 "rate > 10%" 的限制
+
+⚠️ 合并上游时必须复查（上游会周期性恢复该检测）：
+-------------------------------------------------
+- facefusion/workflows/to_video.py 的 analyse_video() 应为 return 0
+- facefusion/workflows/to_image.py 的 analyse_image() 应为 return 0
+- 两处都不应再出现 `from facefusion import content_analyser` 或 analyse_* 调用
+
+合并后快速检查：
+  grep -n "analyse_video\|analyse_image\|content_analyser" \
+    facefusion/workflows/to_video.py facefusion/workflows/to_image.py
+  # 期望：只有 def 行，没有 content_analyser 的调用
+
+另注：core.py 的 common_pre_check() 会校验 content_analyser.py 的源码哈希。
+本 fork **不修改** content_analyser.py，所以哈希校验依旧通过；
+关检测只改 workflows/to_video.py 与 to_image.py 的调用点。
 
 注意事项：
 ----------
@@ -36,21 +64,17 @@
 
 如何恢复内容检测：
 ------------------
-如果需要恢复内容检测功能：
-1. 删除修改的文件
-2. 从 Git 恢复原始文件：
-   git checkout facefusion/workflows/image_to_video.py
-   git checkout facefusion/workflows/image_to_image.py
-   git checkout facefusion/uis/components/preview.py
-   git checkout facefusion/streamer.py
+1. 从 Git 恢复原始文件：
+   git checkout <上游标签> -- facefusion/workflows/to_video.py
+   git checkout <上游标签> -- facefusion/workflows/to_image.py
+   git checkout <上游标签> -- facefusion/uis/components/preview.py
+   git checkout <上游标签> -- facefusion/streamer.py
+2. 注意 to_video.py / to_image.py 里还含本地其他定制（preheat_static_faces 等），
+   恢复前先确认不会连带回退这些改动。
 
-或者重新安装 FaceFusion。
-
-当前状态：
-----------
+当前状态（2026-10-05，3.9.1 合并后）：
+-------------------------------------
 ✓ 视频处理 - 内容检测已禁用
 ✓ 图片处理 - 内容检测已禁用
 ✓ 预览功能 - 内容检测已禁用
 ✓ 流媒体处理 - 内容检测已禁用
-
-现在可以正常处理所有视频和图片了！

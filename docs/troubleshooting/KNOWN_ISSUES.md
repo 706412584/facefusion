@@ -1,7 +1,7 @@
 # 已知问题索引
 
 > 整理自本地运维文档，**非实时 bug 列表**。有新复现时请附日志后再开诊断。  
-> 日期：2026-08-07
+> 日期：2026-10-05（3.9.1 合并后更新）
 
 ## 1. 任务 / 工作流
 
@@ -9,6 +9,8 @@
 |------|----------|------|
 | job_runner 任务编号显示 `none` | job_runner **不创建**任务，只跑队列 | [工作流程完整说明](../workflows/FaceFusion工作流程完整说明.md) |
 | 点开始无反应 / 任务失败 | 未提交 step、输出路径无效、处理器未勾选 | [任务失败诊断](任务失败诊断.txt) |
+| 分析 100% 后停住、无输出 | **出片前 NSFW 内容检测**（看 rate>10）；上游合并易冲掉本地补丁 | [内容检测问题说明](../guides/内容检测问题说明.txt) |
+| 输出 0 字节、退出码 1，日志却"成功" | **flac 音轨写入 mp4** 被判实验特性；`concat_video` 最易漏 `-strict -2` | [instant_runner使用说明](../workflows/instant_runner使用说明.txt) 的"flac 音频坑" |
 | 不知用哪种 workflow | 新手用 instant_runner | [工作流程切换指南](../workflows/工作流程切换指南.txt) |
 
 **建议**：日常用 `启动FaceFusion.bat`（instant_runner）；批量用 job_manager → job_runner。

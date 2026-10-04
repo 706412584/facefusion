@@ -20,4 +20,5 @@
 - 启动桌面版：根目录 `启动桌面版.bat`
 - 运维脚本：`scripts/`
 - 上游同步：见 [development/upstream-sync.md](development/upstream-sync.md)
+- 当前版本说明：见 [RELEASE_NOTES_3.9.1-local.1.md](RELEASE_NOTES_3.9.1-local.1.md)
 - 已知问题：见 [troubleshooting/KNOWN_ISSUES.md](troubleshooting/KNOWN_ISSUES.md)

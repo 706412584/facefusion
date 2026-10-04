@@ -1,7 +1,7 @@
 FaceFusion（本地定制）
 ====================
 
-> 基于 [官方 FaceFusion](https://github.com/facefusion/facefusion) **3.8.0** 的 fork：中文 UI、疑难帧 override、本机运维脚本与文档。
+> 基于 [官方 FaceFusion](https://github.com/facefusion/facefusion) **3.9.1** 的 fork：中文 UI、疑难帧 override、本机运维脚本与文档。
 
 [![License](https://img.shields.io/badge/license-OpenRAIL--AS-green)](LICENSE.md)
 
@@ -86,5 +86,6 @@ commands:
 版本
 ----
 
-- 上游基线：FaceFusion **3.8.0**
-- 本 fork 发布标签：见 `docs/RELEASE_NOTES_3.8.0-local.1.md` / tag `v3.8.0-local.1`
+- 上游基线：FaceFusion **3.9.1**（合并提交 `39932803`，2026-10-05）
+- 本 fork 发布说明：见 `docs/RELEASE_NOTES_3.9.1-local.1.md`
+- 上一版：`docs/RELEASE_NOTES_3.8.0-local.1.md` / tag `v3.8.0-local.1`
